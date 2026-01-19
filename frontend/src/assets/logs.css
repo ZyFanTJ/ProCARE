@@ -1,0 +1,81 @@
+/* 通用日志块样式 */
+.log-block {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin: 8px 0 12px;
+  overflow: hidden;
+}
+
+.log-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+}
+
+.log-pre {
+  margin: 0;
+  padding: 12px;
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+}
+
+/* 类型样式 */
+.log-code {
+  border-color: #d0d7de;
+}
+.log-code .log-pre {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+.log-code .log-block__header {
+  background: #111827;
+  color: #e5e7eb;
+  border-bottom-color: #1f2937;
+}
+
+.log-stdout {
+  border-color: #b7eb8f;
+}
+.log-stdout .log-block__header {
+  background: #f6ffed;
+  color: #135200;
+  border-bottom-color: #b7eb8f;
+}
+
+.log-stderr {
+  border-color: #ffa39e;
+}
+.log-stderr .log-block__header {
+  background: #fff1f0;
+  color: #a8071a;
+  border-bottom-color: #ffa39e;
+}
+
+.log-suggestion {
+  border-color: #91d5ff;
+}
+.log-suggestion .log-block__header {
+  background: #e6f7ff;
+  color: #0050b3;
+  border-bottom-color: #91d5ff;
+}
+
+/* 代码查看器 */
+.code-viewer {
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+.code-viewer__inner { display: grid; grid-template-columns: 48px 1fr; }
+.code-viewer__gutter { background: #0b1220; border-right: 1px solid #1f2937; padding: 12px 8px; }
+.code-viewer__ln { color: #64748b; line-height: 20px; height: 20px; }
+.code-viewer__content { margin: 0; padding: 12px; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+.cv-kw { color: #93c5fd; }
+.cv-str { color: #22d3ee; }
+.cv-cmt { color: #94a3b8; }
+.cv-num { color: #fdba74; }

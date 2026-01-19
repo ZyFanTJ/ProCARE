@@ -1,0 +1,170 @@
+/* Markdown容器与基础排版 */
+.md-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 8px 4px 24px;
+}
+
+.md-h1 {
+  font-size: 32px;
+  line-height: 1.3;
+  margin: 28px 0 16px;
+  border-bottom: 2px solid rgba(37, 99, 235, 0.25);
+  padding-bottom: 10px;
+  scroll-margin-top: 80px;
+  color: #0f172a;
+}
+
+.md-h2 {
+  font-size: 24px;
+  line-height: 1.4;
+  margin: 22px 0 10px;
+  border-left: 4px solid #2563eb;
+  padding-left: 10px;
+  scroll-margin-top: 80px;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.08), transparent);
+}
+
+.md-h3 {
+  font-size: 20px;
+  line-height: 1.5;
+  margin: 18px 0 8px;
+  scroll-margin-top: 80px;
+  color: #1f2937;
+}
+
+.md-p {
+  font-size: 15px;
+  line-height: 1.95;
+  color: #374151;
+  margin: 12px 0;
+}
+
+.md-img {
+  display: block;
+  max-width: 85%;
+  height: auto;
+  margin: 14px auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+/* 图文容器，避免分页断裂 */
+.md-figure {
+  display: block;
+  margin: 12px auto;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.md-code {
+  background: #f4f6ff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  overflow: auto;
+  font-size: 13px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.md-inline-code {
+  background: #eef2ff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0 4px;
+}
+
+.md-quote {
+  border-left: 4px solid #2563eb;
+  margin: 14px 0;
+  padding: 6px 12px;
+  color: #3f3f46;
+  background: #eff6ff;
+}
+
+.md-ul, .md-ol {
+  margin: 10px 0 12px;
+  padding-left: 26px;
+}
+
+.md-ul li, .md-ol li {
+  margin: 6px 0;
+  line-height: 1.85;
+}
+
+.md-ul ul, .md-ul ol,
+.md-ol ul, .md-ol ol {
+  margin: 6px 0 6px;
+  padding-left: 22px;
+}
+
+.md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+.md-table th, .md-table td {
+  border: 1px solid #e5e7eb;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.md-a {
+  color: #2563eb;
+}
+.md-a:hover {
+  text-decoration: underline;
+}
+
+/* 打印样式用于导出为PDF */
+@media print {
+  /* 页面尺寸与边距 */
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  /* 隐藏不必要的布局元素（这些类名来自antd布局） */
+  .ant-layout-sider,
+  .ant-layout-header,
+  .ant-menu,
+  .ant-card-head,
+  .ant-card-actions,
+  .ant-card-extra {
+    display: none !important;
+  }
+
+  .ant-layout-content {
+    margin: 0 !important;
+  }
+
+  /* 打印时放宽容器宽度与图片宽度 */
+  .md-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .md-img {
+    max-width: 100% !important;
+    max-height: 250mm; /* 避免单图过高被切割 */
+    page-break-inside: avoid;
+  }
+
+  .md-figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .md-code,
+  .md-table {
+    page-break-inside: avoid;
+  }
+
+  /* 列表在打印/导出时的行距与间距优化 */
+  .md-ul, .md-ol { margin: 12px 0; padding-left: 28px; }
+  .md-ul li, .md-ol li { margin: 6px 0; line-height: 1.95; }
+
+  /* 标题避免分页断裂 */
+  .md-h1, .md-h2, .md-h3 { page-break-after: avoid; }
+}

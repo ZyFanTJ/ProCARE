@@ -1,151 +1,151 @@
 # ProCARE: A Cognitive Agent Framework for Real-World Studies
 
-**ProCARE** (Profile-driven Cognitive Agent for RWS Evidence) 是一个专为真实世界研究（Real World Study, RWS）设计的认知智能体框架。本项目是 ProCARE 框架的官方参考实现，代码库名为 `HF_ai4research_v2`。
+**ProCARE** (Profile-driven Cognitive Agent for RWS Evidence) is a cognitive agent framework designed for Real-World Studies (RWS). This project is the official reference implementation of the ProCARE framework, with the codebase named `HF_ai4research_v2`.
 
-> 本项目基于 [docs/techreport.txt](docs/techreport.txt) 中描述的方法论构建。
+> This project is built based on the methodology described in [docs/techreport.txt](docs/techreport.txt).
 
 ---
 
-## 核心理念 (The ProCARE Framework)
+## Core Concept (The ProCARE Framework)
 
-ProCARE 旨在解决 RWS 流程中对方法学严谨性、因果假设验证及合规报告的高要求。核心机制是 **基于画像的认知循环 (Profile-Driven Cognitive Loop)**，形式化为：
+ProCARE aims to address the high requirements for methodological rigor, causal assumption verification, and compliant reporting in the RWS process. The core mechanism is the **Profile-Driven Cognitive Loop**, formalized as:
 
 $$ \Phi \;\xrightarrow{}\; \mathcal{M} \;\xrightarrow{}\; (P, C, R) $$
 
-其中：
-- $\Phi$：结构化的异构数据画像（Heterogeneous Data Profile）。
-- $\mathcal{M}$：与画像对齐的认知记忆系统（Profile-Aligned Cognitive Memory）。
-- $(P, C, R)$：生成的研究计划（Plan）、验证过的可执行代码（Code）与科学报告（Report）。
+Where:
+- $\Phi$: Structured Heterogeneous Data Profile.
+- $\mathcal{M}$: Profile-Aligned Cognitive Memory system.
+- $(P, C, R)$: Generated Research Plan (Plan), Verified Executable Code (Code), and Scientific Report (Report).
 
 ---
 
-## 系统模块与方法论
+## System Modules and Methodology
 
-系统主要由以下五个核心模块组成，对应论文中的方法论设计：
+The system mainly consists of the following five core modules, corresponding to the methodological design in the paper:
 
-### 1. 异构数据画像 (Heterogeneous Data Profiling, $\Phi$)
-系统不直接处理原始数据，而是将其压缩为结构化元数据画像 $\Phi$，包含两个维度：
-- **粒度 (Granularity)**：数据集级 (High) vs 字段级 (Low)。
-- **抽象度 (Abstraction)**：结构性 (Structural) vs 知识驱动 (Knowledge-driven)。
+### 1. Heterogeneous Data Profiling ($\Phi$)
+The system does not directly process raw data but compresses it into a structured metadata profile $\Phi$, which includes two dimensions:
+- **Granularity**: Dataset-level (High) vs. Field-level (Low).
+- **Abstraction**: Structural vs. Knowledge-driven.
 
 | | High Granularity (Dataset/Task) | Low Granularity (Field/Instance) |
 |---|---|---|
-| **Structural ($\Phi^{\cdot,S}$)** | 表结构关系、统计摘要、质量指标 | 字段类型、基数、分布、缺失机制 |
-| **Knowledge ($\Phi^{\cdot,K}$)** | 研究设计模式、变量角色、合规性 | 本体映射、校验状态、合理性检查 |
+| **Structural ($\Phi^{\cdot,S}$)** | Table relationships, statistical summary, quality metrics | Field types, cardinality, distribution, missing mechanism |
+| **Knowledge ($\Phi^{\cdot,K}$)** | Research design patterns, variable roles, compliance | Ontology mapping, validation status, plausibility checks |
 
-*代码对应：`backend/app/services/excel_analyzer.py` (ExcelAgent)*
+*Code Reference: `backend/app/services/excel_analyzer.py` (ExcelAgent)*
 
-### 2. 认知记忆架构 (Cognitive Memory Architecture, $\mathcal{M}$)
-为了支持长程推理并防止幻觉，系统维护了四类与画像对齐的记忆库：
-- **Episodic Memory ($\mathcal{M}^{\mathrm{epi}}$)**：动态记录执行轨迹与运行时假设，作为证据链。
-- **Working Memory ($\mathcal{M}^{\mathrm{work}}$)**：维护字段级的动态上下文，确保类型一致性。
-- **Semantic Memory ($\mathcal{M}^{\mathrm{sem}}$)**：存储高层研究设计原则（来自 $\Phi^{\mathrm{H,K}}$），作为方法学护栏。
-- **Procedural Memory ($\mathcal{M}^{\mathrm{proc}}$)**：存储操作策略（如混杂因素调整规则）。
+### 2. Cognitive Memory Architecture ($\mathcal{M}$)
+To support long-term reasoning and prevent hallucinations, the system maintains four types of profile-aligned memory banks:
+- **Episodic Memory ($\mathcal{M}^{\mathrm{epi}}$)**: Dynamically records execution trajectories and runtime assumptions as a chain of evidence.
+- **Working Memory ($\mathcal{M}^{\mathrm{work}}$)**: Maintains field-level dynamic context to ensure type consistency.
+- **Semantic Memory ($\mathcal{M}^{\mathrm{sem}}$)**: Stores high-level research design principles (from $\Phi^{\mathrm{H,K}}$) as methodological guardrails.
+- **Procedural Memory ($\mathcal{M}^{\mathrm{proc}}$)**: Stores operational strategies (e.g., confounding factor adjustment rules).
 
-*代码对应：`backend/app/core/memory.py`*
+*Code Reference: `backend/app/core/memory.py`*
 
-### 3. 分层规划 (Hierarchical Planning)
-采用两阶段规划机制，从粗粒度可行性评估到字段级操作化：
-1.  **初步计划 ($P_0$)**：基于高粒度画像，制定符合 STROBE 标准的研究设计与分析策略。
-2.  **详细执行计划 ($P_d$)**：结合字段级语义（如暴露 $X$、结局 $Y$ 的具体列），生成可执行的蓝图。
+### 3. Hierarchical Planning
+Adopts a two-stage planning mechanism, from coarse-grained feasibility assessment to field-level operationalization:
+1.  **Preliminary Plan ($P_0$)**: Based on high-granularity profiles, formulates research design and analysis strategies compliant with STROBE standards.
+2.  **Detailed Execution Plan ($P_d$)**: Combines field-level semantics (e.g., specific columns for exposure $X$, outcome $Y$) to generate an executable blueprint.
 
-*代码对应：`backend/app/agents/plan_agent.py`*
+*Code Reference: `backend/app/agents/plan_agent.py`*
 
-### 4. 约束制导的代码合成 (Constrained Code Synthesis)
-通过 **Verifier-Repair** 循环生成可执行代码 $C^*$：
-- **Verifier ($V$)**：结合静态分析（Schema检查）与运行时沙箱（Sandbox Execution），检测代码是否违反约束 $\mathcal{C}$。
-- **Repair ($R$)**：针对检测到的违规（如 Schema 不匹配、方法学假设未满足），应用最小化编辑进行修复。
+### 4. Constrained Code Synthesis
+Generates executable code $C^*$ through a **Verifier-Repair** loop:
+- **Verifier ($V$)**: Combines static analysis (Schema check) and runtime sandbox (Sandbox Execution) to detect if the code violates constraints $\mathcal{C}$.
+- **Repair ($R$)**: Applies minimal edits to repair detected violations (e.g., Schema mismatch, methodological assumptions not met).
 
-*代码对应：`backend/app/agents/code_agent.py` 与 `backend/app/core/react_loop.py`*
+*Code Reference: `backend/app/agents/code_agent.py` and `backend/app/core/react_loop.py`*
 
-### 5. 基于 DAG 的报告生成 (DAG-Based Report Generation)
-报告生成被建模为依赖有向无环图 (DAG)。系统计算每个报告任务的 **支持度分数 (Support Score)**（基于变量可用性、时序有效性、样本量与方法一致性），并通过加权拓扑排序动态生成报告章节，确保结论有据可依。
+### 5. DAG-Based Report Generation
+Report generation is modeled as a dependency Directed Acyclic Graph (DAG). The system calculates the **Support Score** for each reporting task (based on variable availability, temporal validity, sample size, and methodological consistency) and dynamically generates report chapters through weighted topological sorting to ensure conclusions are evidence-based.
 
-*代码对应：`backend/app/services/report_builder.py`*
+*Code Reference: `backend/app/services/report_builder.py`*
 
 ---
 
-## 系统架构与目录
+## System Architecture and Directory
 
 ```
 backend/
 ├── app/
-│   ├── agents/            # 智能体核心 (实现 Plan, Code, Report 生成)
-│   ├── core/              # 基础设施 (LLM Client, ReAct Loop, Memory $\mathcal{M}$)
-│   ├── services/          # 业务服务
-│   │   ├── excel_analyzer.py  # 实现 Heterogeneous Profiling $\Phi$
-│   │   ├── executor.py        # 代码执行沙箱
+│   ├── agents/            # Agent Core (Implements Plan, Code, Report generation)
+│   ├── core/              # Infrastructure (LLM Client, ReAct Loop, Memory $\mathcal{M}$)
+│   ├── services/          # Business Services
+│   │   ├── excel_analyzer.py  # Implements Heterogeneous Profiling $\Phi$
+│   │   ├── executor.py        # Code Execution Sandbox
 │   │   └── report_builder.py  # DAG-Based Reporting
-│   ├── config/            # 配置文件 (Prompt Templates)
-│   └── api/               # FastAPI 接口
-└── output/                # 运行时产物
+│   ├── config/            # Configuration Files (Prompt Templates)
+│   └── api/               # FastAPI Interfaces
+└── output/                # Runtime Artifacts
 
-frontend/                  # React + Vite 前端界面
+frontend/                  # React + Vite Frontend Interface
 ```
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 环境要求
+### Environment Requirements
 - Python 3.10+
 - Node.js 16+
 
-### 1. 后端启动
+### 1. Backend Startup
 
 ```bash
-# 进入后端目录
+# Enter backend directory
 cd backend
 
-# 创建并激活虚拟环境
+# Create and activate virtual environment
 python -m venv .venv
 # Windows:
 .\.venv\Scripts\activate
 # Linux/Mac:
 source .venv/bin/activate
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 
-# 启动 API 服务 (默认端口 8000)
+# Start API service (default port 8000)
 uvicorn app.main:app --reload
 ```
 
-### 2. 前端启动
+### 2. Frontend Startup
 
 ```bash
-# 进入前端目录
+# Enter frontend directory
 cd frontend
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 启动开发服务器
+# Start development server
 npm run dev
 ```
 
-访问浏览器地址（通常为 `http://localhost:5173`）即可开始使用。
+Access the browser address (usually `http://localhost:5173`) to start using it.
 
 ---
 
-## 使用流程
+## Usage Workflow
 
-1.  **上传数据**：上传 Excel 文件，系统自动生成 **Heterogeneous Data Profile ($\Phi$)**。
-2.  **定义目标**：输入研究主题（$T_{\text{goal}}$）。
-3.  **认知循环**：
-    *   **Planning**：生成初步计划 $P_0$ 与详细计划 $P_d$。
-    *   **Coding**：进入 ReAct 循环，通过约束制导合成代码 $C^*$。
-    *   **Reporting**：基于 DAG 生成包含完整证据链的学术报告 $R$。
-4.  **查看结果**：在界面查看执行日志、统计图表与 Markdown 报告。
+1.  **Upload Data**: Upload an Excel file, and the system automatically generates the **Heterogeneous Data Profile ($\Phi$)**.
+2.  **Define Goal**: Input the research topic ($T_{\text{goal}}$).
+3.  **Cognitive Loop**:
+    *   **Planning**: Generate Preliminary Plan $P_0$ and Detailed Plan $P_d$.
+    *   **Coding**: Enter the ReAct loop and synthesize code $C^*$ through constraint guidance.
+    *   **Reporting**: Generate an academic report $R$ with a complete chain of evidence based on DAG.
+4.  **View Results**: View execution logs, statistical charts, and the Markdown report in the interface.
 
 ---
 
-## 演示
+## Demo
 
 ![Demo](docs/AI4RWS.mp4)
 
 ---
 
-## 许可
+## License
 
-本项目仅供演示与研究用途。请在合规与隐私安全的前提下使用真实世界数据。
+This project is for demonstration and research purposes only. Please use real-world data under the premise of compliance and privacy security.

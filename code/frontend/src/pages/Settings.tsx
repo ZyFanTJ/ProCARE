@@ -204,7 +204,7 @@ export default function Settings() {
               { label: 'Claude Sonnet 4.6', value: 'claude-sonnet-4-6' },
               { label: 'Qwen 3.5 Plus', value: 'qwen3.5-plus' },
               { label: 'MiniMax M2.5 Highspeed', value: 'minimax-m2.5-highspeed' },
-              { label: 'DeepSeek Chat', value: 'deepseek-chat' }
+              { label: 'DeepSeek V4 Flash', value: 'deepseek-v4-flash' }
             ]} />
           </Form.Item>
           

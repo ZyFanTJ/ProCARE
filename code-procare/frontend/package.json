@@ -1,0 +1,33 @@
+{
+  "name": "ai4research-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.3.7",
+    "@monaco-editor/react": "^4.7.0",
+    "antd": "^5.18.3",
+    "axios": "^1.7.7",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-force-graph-2d": "^1.29.1",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.26.2",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.7",
+    "@types/react-dom": "^18.3.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "baseline-browser-mapping": "^2.10.12",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8"
+  }
+}

@@ -1,0 +1,291 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap');
+
+/* Variables */
+.container {
+  /* Default Dark Mode (Sci-Fi) */
+  --tpl-bg: #000;
+  --tpl-text: #e0f2fe;
+  --tpl-text-secondary: #94a3b8;
+  --tpl-panel-bg: rgba(10, 15, 30, 0.85);
+  --tpl-panel-border: rgba(0, 255, 255, 0.2);
+  --tpl-accent: #00ffff;
+  --tpl-accent-glow: rgba(0, 255, 255, 0.5);
+  --tpl-item-bg: rgba(255, 255, 255, 0.03);
+  --tpl-item-border: rgba(255, 255, 255, 0.05);
+  --tpl-item-hover-bg: rgba(0, 255, 255, 0.1);
+  --tpl-preview-bg: rgba(0, 0, 0, 0.3);
+  --tpl-paper-bg: #0f172a;
+  --tpl-paper-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 80px); /* Adjust for header */
+  background: var(--tpl-bg);
+  color: var(--tpl-text);
+  font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Light Mode Overrides (Clean Tech) */
+:global([data-theme='light']) .container {
+  --tpl-bg: #F1F5F9;
+  --tpl-text: #1E293B;
+  --tpl-text-secondary: #64748B;
+  --tpl-panel-bg: rgba(255, 255, 255, 0.9);
+  --tpl-panel-border: #E2E8F0;
+  --tpl-accent: #0369A1;
+  --tpl-accent-glow: rgba(3, 105, 161, 0.3);
+  --tpl-item-bg: #FFFFFF;
+  --tpl-item-border: #E2E8F0;
+  --tpl-item-hover-bg: #E0F2FE;
+  --tpl-preview-bg: #F8FAFC;
+  --tpl-paper-bg: #FFFFFF;
+  --tpl-paper-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Background Grid Effect */
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(128, 128, 128, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 128, 128, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Selection Panel (Left) */
+.selectionPanel {
+  width: 380px;
+  background: var(--tpl-panel-bg);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid var(--tpl-panel-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.panelHeader {
+  padding: 20px;
+  border-bottom: 1px solid var(--tpl-panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tpl-accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0;
+}
+:global([data-theme='dark']) .title {
+  text-shadow: 0 0 10px var(--tpl-accent-glow);
+}
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.categoryGroup {
+  margin-bottom: 24px;
+}
+
+.categoryTitle {
+  font-size: 12px;
+  color: var(--tpl-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--tpl-panel-border);
+  padding-bottom: 4px;
+}
+
+.sectionItem {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--tpl-item-bg);
+  border: 1px solid var(--tpl-item-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sectionItem:hover {
+  background: var(--tpl-item-hover-bg);
+  border-color: var(--tpl-accent);
+}
+
+.sectionItem.active {
+  border-color: var(--tpl-accent);
+  background: var(--tpl-item-hover-bg);
+}
+
+.sectionInfo {
+  margin-left: 12px;
+  flex: 1;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tpl-text);
+}
+
+.sectionDesc {
+  font-size: 11px;
+  color: var(--tpl-text-secondary);
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+/* Preview Panel (Right) */
+.previewPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--tpl-preview-bg);
+  position: relative;
+  z-index: 5;
+}
+
+.toolbar {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--tpl-panel-bg);
+  border-bottom: 1px solid var(--tpl-panel-border);
+}
+
+.paperPreview {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.paper {
+  width: 100%;
+  max-width: 800px;
+  background: var(--tpl-paper-bg);
+  box-shadow: var(--tpl-paper-shadow);
+  border-radius: 4px; /* Slightly rounded like modern docs */
+  padding: 60px;
+  min-height: 800px;
+  position: relative;
+  box-sizing: border-box;
+  /* overflow: hidden; Removed to prevent cutting off content */
+}
+
+.paperHeader {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--tpl-panel-border);
+  word-wrap: break-word;
+}
+
+.paperTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--tpl-text);
+  margin-bottom: 8px;
+}
+
+.paperMeta {
+  font-size: 12px;
+  color: var(--tpl-text-secondary);
+}
+
+.previewItem {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px dashed var(--tpl-panel-border);
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.02);
+  transition: all 0.2s;
+  position: relative;
+}
+
+.previewItem:hover {
+  border-color: var(--tpl-accent);
+  background: var(--tpl-item-hover-bg);
+}
+
+.previewIndex {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--tpl-accent);
+  opacity: 0.3;
+  margin-right: 16px;
+  line-height: 1;
+}
+
+.previewContent {
+  flex: 1;
+  min-width: 0; /* Important for flex child shrinking */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.previewTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tpl-text);
+  margin-bottom: 4px;
+}
+
+.previewDesc {
+  font-size: 12px;
+  color: var(--tpl-text-secondary);
+}
+
+.previewActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.previewItem:hover .previewActions {
+  opacity: 1;
+}
+
+/* Scrollbar styling */
+.scrollArea::-webkit-scrollbar,
+.paperPreview::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollArea::-webkit-scrollbar-thumb,
+.paperPreview::-webkit-scrollbar-thumb {
+  background: var(--tpl-panel-border);
+  border-radius: 3px;
+}
+
+.scrollArea::-webkit-scrollbar-track,
+.paperPreview::-webkit-scrollbar-track {
+  background: transparent;
+}

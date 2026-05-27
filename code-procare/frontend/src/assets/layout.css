@@ -1,0 +1,191 @@
+/* Professional Research Interface - Global Layout */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Default Dark Mode (Slate/Indigo) */
+  --bg-app: #0f172a;
+  --bg-sider: #0f172a; /* Unified background for cleaner look */
+  --bg-header: rgba(15, 23, 42, 0.85);
+  --bg-component: #1e293b;
+  --bg-input: #1e293b;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --border-color: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --primary-color: #6366f1;
+  --primary-hover: #4f46e5;
+  --active-bg: rgba(99, 102, 241, 0.15);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] {
+  /* Light Mode */
+  --bg-app: #f8fafc;
+  --bg-sider: #ffffff;
+  --bg-header: rgba(255, 255, 255, 0.85);
+  --bg-component: #ffffff;
+  --bg-input: #f1f5f9;
+  --bg-hover: rgba(0, 0, 0, 0.03);
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --active-bg: rgba(79, 70, 229, 0.08);
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ant-layout {
+  background: var(--bg-app) !important;
+}
+
+/* Sider Styling */
+.app-sider {
+  background: var(--bg-sider) !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+
+.app-sider .ant-layout-sider-children {
+  background: var(--bg-sider) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-sider .ant-menu {
+  background: transparent !important;
+  border-inline-end: none !important;
+  padding: 0 12px;
+  flex: 1;
+}
+
+.app-sider .ant-menu-item {
+  margin: 4px 0;
+  border-radius: 8px; /* Softer corners */
+  color: var(--text-secondary) !important;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+
+.app-sider .ant-menu-item:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-hover) !important;
+}
+
+.app-sider .ant-menu-item-selected {
+  background: var(--active-bg) !important;
+  color: var(--primary-color) !important;
+  font-weight: 600;
+}
+
+.app-sider .ant-menu-item .ant-menu-item-icon {
+  font-size: 18px; /* Slightly larger icons */
+  min-width: 24px;
+}
+
+/* Header Styling - Glassmorphism */
+.app-header {
+  background: var(--bg-header) !important;
+  border-bottom: 1px solid var(--border-color);
+  height: 64px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Search Input Styling */
+.search-input .ant-input-affix-wrapper {
+  background: var(--bg-input) !important;
+  border: 1px solid transparent !important;
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 6px 11px;
+  transition: all 0.2s;
+}
+
+.search-input .ant-input-affix-wrapper:hover,
+.search-input .ant-input-affix-wrapper:focus-within {
+  background: var(--bg-component) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px var(--active-bg);
+}
+
+.search-input input {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.search-input input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Route Animation */
+.route-animate {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Card Improvements */
+.ant-card {
+  border-radius: 12px !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid var(--border-color) !important;
+  min-height: 52px;
+}
+
+.ant-card-head-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Button Refinements */
+.ant-btn {
+  box-shadow: none !important;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.ant-btn-primary {
+  background-color: var(--primary-color);
+}
+
+.ant-btn-primary:hover {
+  background-color: var(--primary-hover) !important;
+}

@@ -1,0 +1,934 @@
+{
+  "schema_version": "hcc-mainbenchmark-tasks-v1",
+  "dataset": {
+    "name": "HCC main benchmark",
+    "local_folder": "rws_public_datasets_bundle/hcc_mainbenchmark_data",
+    "workbook_file": "03-数据集-截至202509.xlsx",
+    "disease_domain": "hepatocellular carcinoma",
+    "task_count": 36,
+    "core_question_count": 12,
+    "objective_count": 4
+  },
+  "source": {
+    "manuscript_file": "paper/neurips_2026_appendix_body.tex",
+    "source_tables": [
+      "tab:core-questions",
+      "tab:cohort-instances",
+      "tab:safety-instances",
+      "tab:efficacy-instances",
+      "tab:econ-instances"
+    ],
+    "export_note": "Extracted from the ProCARE appendix benchmark task tables."
+  },
+  "prompt_levels": [
+    {
+      "code": "G",
+      "name": "Goal",
+      "description": "Study objective only; system may find feasible variables and disclose limitations."
+    },
+    {
+      "code": "A",
+      "name": "Goal+Approach",
+      "description": "Study objective plus approach-level methodological guidance."
+    },
+    {
+      "code": "M",
+      "name": "Goal+Method",
+      "description": "Study objective plus specific table, field, anchor, or method constraints."
+    }
+  ],
+  "objectives": [
+    {
+      "code": "C",
+      "name": "Cohort"
+    },
+    {
+      "code": "S",
+      "name": "Safety"
+    },
+    {
+      "code": "E",
+      "name": "Efficacy"
+    },
+    {
+      "code": "H",
+      "name": "Health economics and resource use"
+    }
+  ],
+  "core_questions": [
+    {
+      "id": "C1",
+      "objective": "Cohort",
+      "question": "Characterize the analyzable HCC cohort, including enrollment, baseline characteristics, and clinical staging.",
+      "primary_data_sources": [
+        "CO",
+        "DM",
+        "IE",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ],
+      "primary_data_sources_text": "`CO`, `DM`, `IE`, `SG`, `BCLC`, `CP`, `ECOG`"
+    },
+    {
+      "id": "C2",
+      "objective": "Cohort",
+      "question": "Assess longitudinal follow-up completeness and data density.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "ECOG"
+      ],
+      "primary_data_sources_text": "`CPH_FT`, `VT`, `LB_AFP`, `LB_BB`, `LB_BR`, `ECOG`"
+    },
+    {
+      "id": "C3",
+      "objective": "Cohort",
+      "question": "Assess data readiness for downstream endpoint analyses.",
+      "primary_data_sources": [
+        "DM",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG",
+        "VT"
+      ],
+      "primary_data_sources_text": "`DM`, `SG`, `BCLC`, `CP`, `ECOG`, `VT`, treatment sheets"
+    },
+    {
+      "id": "S1",
+      "objective": "Safety",
+      "question": "Summarize AE/SAE screening rates and the availability of detailed event records.",
+      "primary_data_sources": [
+        "AE_HQ",
+        "SAE_HQ",
+        "AE",
+        "SAE"
+      ],
+      "primary_data_sources_text": "`AE_HQ`, `SAE_HQ`, `AE`, `SAE`"
+    },
+    {
+      "id": "S2",
+      "objective": "Safety",
+      "question": "Describe postoperative laboratory safety signals from liver function, hematology, and coagulation panels.",
+      "primary_data_sources": [
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "SG"
+      ],
+      "primary_data_sources_text": "`LB_BB`, `LB_BR`, `LB_TT`, `SG`"
+    },
+    {
+      "id": "S3",
+      "objective": "Safety",
+      "question": "Compare safety proxy signals after major treatment exposures.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "AE_HQ",
+        "SAE_HQ"
+      ],
+      "primary_data_sources_text": "`TACE`, `TART`, `IMU`, `PATE`, `AE_HQ`, `SAE_HQ`, lab sheets"
+    },
+    {
+      "id": "E1",
+      "objective": "Efficacy",
+      "question": "Analyze recurrence and recurrence-free survival proxies after surgery.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ],
+      "primary_data_sources_text": "`SG`, `VT`, `BCLC`, `CP`, `ECOG`, treatment sheets"
+    },
+    {
+      "id": "E2",
+      "objective": "Efficacy",
+      "question": "Analyze overall survival proxies and their relationship to treatment exposure.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "DM",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ],
+      "primary_data_sources_text": "`SG`, `VT`, `DM`, `BCLC`, `CP`, `ECOG`, treatment sheets"
+    },
+    {
+      "id": "E3",
+      "objective": "Efficacy",
+      "question": "Analyze response assessment and longitudinal tumor-marker changes.",
+      "primary_data_sources": [
+        "VT",
+        "LB_AFP",
+        "AFP2",
+        "BCLC"
+      ],
+      "primary_data_sources_text": "`VT`, `LB_AFP`, `AFP2`, `BCLC`, treatment sheets"
+    },
+    {
+      "id": "H1",
+      "objective": "Health economics/resource use",
+      "question": "Describe postoperative treatment resource utilization and treatment intensity.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "CM",
+        "SG"
+      ],
+      "primary_data_sources_text": "`TACE`, `TART`, `IMU`, `PATE`, `CM`, `SG`"
+    },
+    {
+      "id": "H2",
+      "objective": "Health economics/resource use",
+      "question": "Estimate follow-up and testing burden as a resource-use proxy.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "ECOG",
+        "SF"
+      ],
+      "primary_data_sources_text": "`CPH_FT`, `VT`, `LB_AFP`, `LB_BB`, `LB_BR`, `LB_TT`, `ECOG`, `SF`"
+    },
+    {
+      "id": "H3",
+      "objective": "Health economics/resource use",
+      "question": "Use SF-12 availability and treatment intensity to assess QoL/resource-use feasibility.",
+      "primary_data_sources": [
+        "SF",
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "VT"
+      ],
+      "primary_data_sources_text": "`SF`, `TACE`, `TART`, `IMU`, `PATE`, `VT`"
+    }
+  ],
+  "instances": [
+    {
+      "id": "C1-G",
+      "benchmark_id": "HCC-001",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C1",
+      "core_question": "Characterize the analyzable HCC cohort, including enrollment, baseline characteristics, and clinical staging.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Characterize the baseline hepatocellular carcinoma cohort available in the workbook. Deliver a cohort summary suitable for a real-world study report.",
+      "required_or_expected_evidence": "Discover `DM`, `SG`, `BCLC`, `CP`, `ECOG`, and subject identifiers.",
+      "primary_data_sources": [
+        "CO",
+        "DM",
+        "IE",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "C1-A",
+      "benchmark_id": "HCC-002",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C1",
+      "core_question": "Characterize the analyzable HCC cohort, including enrollment, baseline characteristics, and clinical staging.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Characterize the baseline HCC cohort. Build a STROBE-style cohort table covering demographics, surgery, liver function, tumor stage, and performance status.",
+      "required_or_expected_evidence": "Use patient-level baseline records, report missingness, and avoid duplicate subject counting.",
+      "primary_data_sources": [
+        "CO",
+        "DM",
+        "IE",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "C1-M",
+      "benchmark_id": "HCC-003",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C1",
+      "core_question": "Characterize the analyzable HCC cohort, including enrollment, baseline characteristics, and clinical staging.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Produce a baseline cohort table for subjects with valid `Subject_Id`. Join `DM`, `SG`, `BCLC`, `CP`, and baseline `ECOG`; summarize `AGE`, `SEX`, `HEIGHT`, `WEIGHT`, `SGDAT`, `SGTYP`, `BCLC`, `CPRES`, `CPGRA`, and `ECOG`.",
+      "required_or_expected_evidence": "Use one baseline row per subject; report variable-level missingness; do not impute incomplete `AGE`.",
+      "primary_data_sources": [
+        "CO",
+        "DM",
+        "IE",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "C2-G",
+      "benchmark_id": "HCC-004",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C2",
+      "core_question": "Assess longitudinal follow-up completeness and data density.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Assess whether the dataset has sufficient longitudinal follow-up for real-world evidence generation.",
+      "required_or_expected_evidence": "Identify visit-level forms and repeated measurements.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "C2-A",
+      "benchmark_id": "HCC-005",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C2",
+      "core_question": "Assess longitudinal follow-up completeness and data density.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Assess longitudinal follow-up completeness across follow-up forms, laboratory panels, tumor-marker tests, ECOG assessments, and efficacy follow-up records.",
+      "required_or_expected_evidence": "Use `CPH_FT`, `VT`, laboratory sheets, and `ECOG`; produce visit-level summaries.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "C2-M",
+      "benchmark_id": "HCC-006",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C2",
+      "core_question": "Assess longitudinal follow-up completeness and data density.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Quantify longitudinal data completeness using `CPH_FT`, `VT`, `LB_AFP`, `LB_BB`, `LB_BR`, and `ECOG`; count distinct visits by `Subject_Id`, tabulate availability by `Visit_No`, and estimate follow-up duration from `SG.SGDAT` to the latest `VT.VTDAT1` or `VT.VTDAT2`.",
+      "required_or_expected_evidence": "Use `Subject_Id` and `Visit_No`; report subjects with no valid follow-up date.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "C3-G",
+      "benchmark_id": "HCC-007",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C3",
+      "core_question": "Assess data readiness for downstream endpoint analyses.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Evaluate whether the cohort is fit for downstream RWS endpoint analyses.",
+      "required_or_expected_evidence": "Reason about exposure, outcome, confounder, and time-anchor variables.",
+      "primary_data_sources": [
+        "DM",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG",
+        "VT"
+      ]
+    },
+    {
+      "id": "C3-A",
+      "benchmark_id": "HCC-008",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C3",
+      "core_question": "Assess data readiness for downstream endpoint analyses.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Evaluate endpoint-analysis readiness through a feasibility matrix covering identifiers, surgery date, treatment exposure, recurrence/death endpoints, and baseline confounders.",
+      "required_or_expected_evidence": "Include data limitations, not only descriptive counts.",
+      "primary_data_sources": [
+        "DM",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG",
+        "VT"
+      ]
+    },
+    {
+      "id": "C3-M",
+      "benchmark_id": "HCC-009",
+      "objective_code": "C",
+      "objective": "Cohort",
+      "core_question_id": "C3",
+      "core_question": "Assess data readiness for downstream endpoint analyses.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Build a data-readiness matrix by checking `Subject_Id`, `SG.SGDAT`, recurrence dates `VT.PADHDAT`/`VT.PADRDAT`, death dates `VT.DEDAT1`/`VT.DEDAT2`, treatments from `TACE`, `TART`, `IMU`, `PATE`, and confounders `DM.SEX`, `DM.AGE`, `BCLC.BCLC`, `CP.CPGRA`, `ECOG.ECOG`.",
+      "required_or_expected_evidence": "Flag sparse or unavailable fields, especially `VT.DEDAT2`; do not invent endpoint fields.",
+      "primary_data_sources": [
+        "DM",
+        "SG",
+        "BCLC",
+        "CP",
+        "ECOG",
+        "VT"
+      ]
+    },
+    {
+      "id": "S1-G",
+      "benchmark_id": "HCC-010",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S1",
+      "core_question": "Summarize AE/SAE screening rates and the availability of detailed event records.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Analyze the adverse-event and serious-adverse-event safety profile in the cohort.",
+      "required_or_expected_evidence": "Discover that AE/SAE screening pages exist but detailed event tables are empty in the current workbook.",
+      "primary_data_sources": [
+        "AE_HQ",
+        "SAE_HQ",
+        "AE",
+        "SAE"
+      ]
+    },
+    {
+      "id": "S1-A",
+      "benchmark_id": "HCC-011",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S1",
+      "core_question": "Summarize AE/SAE screening rates and the availability of detailed event records.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Analyze AE and SAE safety reporting. Start with screening pages, then check whether detailed AE/SAE records are available for term, onset date, severity, causality, outcome, and seriousness.",
+      "required_or_expected_evidence": "Document infeasibility of detailed AE/SAE term analysis when detail tables have no valid records.",
+      "primary_data_sources": [
+        "AE_HQ",
+        "SAE_HQ",
+        "AE",
+        "SAE"
+      ]
+    },
+    {
+      "id": "S1-M",
+      "benchmark_id": "HCC-012",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S1",
+      "core_question": "Summarize AE/SAE screening rates and the availability of detailed event records.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Summarize AE/SAE reporting completeness using `AE_HQ.AEYN` and `SAE_HQ.SAEYN`; inspect `AE.AETERM`, `AE.AESTDAT`, `AE.AESEV`, `AE.AEREL`, `AE.AESAE`, `SAE.SAESTDAT`, and `SAE.SAESEV`.",
+      "required_or_expected_evidence": "Compute screening prevalence by subject; terminate detail-level analysis if `AE` and `SAE` contain zero valid records.",
+      "primary_data_sources": [
+        "AE_HQ",
+        "SAE_HQ",
+        "AE",
+        "SAE"
+      ]
+    },
+    {
+      "id": "S2-G",
+      "benchmark_id": "HCC-013",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S2",
+      "core_question": "Describe postoperative laboratory safety signals from liver function, hematology, and coagulation panels.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Identify laboratory safety signals after surgery.",
+      "required_or_expected_evidence": "Use longitudinal laboratory sheets rather than relying only on AE tables.",
+      "primary_data_sources": [
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "SG"
+      ]
+    },
+    {
+      "id": "S2-A",
+      "benchmark_id": "HCC-014",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S2",
+      "core_question": "Describe postoperative laboratory safety signals from liver function, hematology, and coagulation panels.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Identify post-surgical laboratory safety signals by summarizing liver function, hematology, and coagulation markers over follow-up visits.",
+      "required_or_expected_evidence": "Use lab value/result-judgment pairs and visit dates; report abnormal-result flags when available.",
+      "primary_data_sources": [
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "SG"
+      ]
+    },
+    {
+      "id": "S2-M",
+      "benchmark_id": "HCC-015",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S2",
+      "core_question": "Describe postoperative laboratory safety signals from liver function, hematology, and coagulation panels.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Generate a post-surgical laboratory safety profile anchored at `SG.SGDAT`; use `LB_BB.LBBBDAT`, `ALTRES`, `ASTRES`, `TBILRES`, `ALBRES`; `LB_BR.BRDAT`, `WBCRES`, `HBRES`, `PLTRES`; and `LB_TT.LBTTDAT`, `PTRES`, `INRRES`, `DDIMRES`.",
+      "required_or_expected_evidence": "Summarize baseline and postoperative windows; use available-case denominators and `_SIG` flags when numeric thresholds are unavailable.",
+      "primary_data_sources": [
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "SG"
+      ]
+    },
+    {
+      "id": "S3-G",
+      "benchmark_id": "HCC-016",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S3",
+      "core_question": "Compare safety proxy signals after major treatment exposures.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Compare safety patterns across major postoperative treatment exposures.",
+      "required_or_expected_evidence": "Identify TACE, targeted therapy, immunotherapy, and retreatment exposure sheets.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "AE_HQ",
+        "SAE_HQ"
+      ]
+    },
+    {
+      "id": "S3-A",
+      "benchmark_id": "HCC-017",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S3",
+      "core_question": "Compare safety proxy signals after major treatment exposures.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Compare safety proxy signals by treatment exposure using TACE, targeted therapy, immunotherapy, and postoperative retreatment groups.",
+      "required_or_expected_evidence": "Compare AE/SAE screening and laboratory abnormalities descriptively; avoid causal claims.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "AE_HQ",
+        "SAE_HQ"
+      ]
+    },
+    {
+      "id": "S3-M",
+      "benchmark_id": "HCC-018",
+      "objective_code": "S",
+      "objective": "Safety",
+      "core_question_id": "S3",
+      "core_question": "Compare safety proxy signals after major treatment exposures.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Compare treatment-associated safety proxies using exposure indicators from `TACE.TACEDAT`, `TART.TARSDAT`, `IMU.IMUSDAT`, and `PATE.PATEYN`; calculate screening rates from `AE_HQ.AEYN` and `SAE_HQ.SAEYN`; summarize post-exposure laboratory signals from `LB_BB`, `LB_BR`, and `LB_TT`.",
+      "required_or_expected_evidence": "Report confounder imbalance using `BCLC.BCLC`, `CP.CPGRA`, and `ECOG.ECOG`; frame results as descriptive safety proxies.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "AE_HQ",
+        "SAE_HQ"
+      ]
+    },
+    {
+      "id": "E1-G",
+      "benchmark_id": "HCC-019",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E1",
+      "core_question": "Analyze recurrence and recurrence-free survival proxies after surgery.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Analyze recurrence-related outcomes after surgery.",
+      "required_or_expected_evidence": "Locate surgery dates and recurrence dates in `VT`.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "E1-A",
+      "benchmark_id": "HCC-020",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E1",
+      "core_question": "Analyze recurrence and recurrence-free survival proxies after surgery.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Analyze recurrence-free outcomes using surgery date as time origin, recurrence events from follow-up records, and clinically relevant baseline risk strata.",
+      "required_or_expected_evidence": "Handle multiple follow-up visits and competing or missing dates.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "E1-M",
+      "benchmark_id": "HCC-021",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E1",
+      "core_question": "Analyze recurrence and recurrence-free survival proxies after surgery.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Estimate recurrence-free survival proxies using `SG.SGDAT` as index date; define recurrence as the earliest non-missing `VT.PADHDAT` or `VT.PADRDAT`; censor at latest `VT.VTDAT1` or `VT.VTDAT2`; stratify by `BCLC.BCLC`, `CP.CPGRA`, and exposure from `TACE`, `TART`, `IMU`, or `PATE`.",
+      "required_or_expected_evidence": "Use earliest valid recurrence date and valid time ordering; generate Kaplan-Meier curves only when dates are sufficient.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "E2-G",
+      "benchmark_id": "HCC-022",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E2",
+      "core_question": "Analyze overall survival proxies and their relationship to treatment exposure.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Analyze overall survival patterns in the cohort.",
+      "required_or_expected_evidence": "Identify death dates and follow-up dates.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "DM",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "E2-A",
+      "benchmark_id": "HCC-023",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E2",
+      "core_question": "Analyze overall survival proxies and their relationship to treatment exposure.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Analyze overall survival by deriving time from surgery to death or last follow-up and comparing clinically meaningful strata.",
+      "required_or_expected_evidence": "Use `DEDAT1`/`DEDAT2` and `VT` follow-up dates; disclose death-date limitations.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "DM",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "E2-M",
+      "benchmark_id": "HCC-024",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E2",
+      "core_question": "Analyze overall survival proxies and their relationship to treatment exposure.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Estimate overall-survival proxies using `SG.SGDAT` as index date; define death date as earliest non-missing `VT.DEDAT1` or `VT.DEDAT2`; censor at latest valid `VT.VTDAT1` or `VT.VTDAT2`; compare treatment exposures and adjust or stratify descriptively by `DM.SEX`, `DM.AGE`, `BCLC.BCLC`, `CP.CPGRA`, and `ECOG.ECOG` when available.",
+      "required_or_expected_evidence": "Note that `DEDAT2` is unavailable in the current data; avoid over-adjusted models when events are limited.",
+      "primary_data_sources": [
+        "SG",
+        "VT",
+        "DM",
+        "BCLC",
+        "CP",
+        "ECOG"
+      ]
+    },
+    {
+      "id": "E3-G",
+      "benchmark_id": "HCC-025",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E3",
+      "core_question": "Analyze response assessment and longitudinal tumor-marker changes.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Evaluate treatment response and tumor-marker dynamics over follow-up.",
+      "required_or_expected_evidence": "Combine efficacy assessment and biomarker sheets.",
+      "primary_data_sources": [
+        "VT",
+        "LB_AFP",
+        "AFP2",
+        "BCLC"
+      ]
+    },
+    {
+      "id": "E3-A",
+      "benchmark_id": "HCC-026",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E3",
+      "core_question": "Analyze response assessment and longitudinal tumor-marker changes.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Evaluate response and tumor-marker dynamics by summarizing hospital/telephone efficacy evaluations and longitudinal AFP, CA199, and DCP trajectories by visit and exposure.",
+      "required_or_expected_evidence": "Combine categorical response information with biomarker trends.",
+      "primary_data_sources": [
+        "VT",
+        "LB_AFP",
+        "AFP2",
+        "BCLC"
+      ]
+    },
+    {
+      "id": "E3-M",
+      "benchmark_id": "HCC-027",
+      "objective_code": "E",
+      "objective": "Efficacy",
+      "core_question_id": "E3",
+      "core_question": "Analyze response assessment and longitudinal tumor-marker changes.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Analyze response and tumor-marker trends using `VT.CEVYN`, `VT.CUEV`, `VT.VTDAT1`, `VT.VTDAT2`, plus `LB_AFP.LBAFPDAT`, `AFPRES`, `CA199RES`, and `DCPRES`; align measurements by `Subject_Id` and date relative to `SG.SGDAT`; summarize trajectories by exposure to `TACE`, `TART`, or `IMU`.",
+      "required_or_expected_evidence": "If formal response criteria are not encoded, report observed categories and marker changes without RECIST claims.",
+      "primary_data_sources": [
+        "VT",
+        "LB_AFP",
+        "AFP2",
+        "BCLC"
+      ]
+    },
+    {
+      "id": "H1-G",
+      "benchmark_id": "HCC-028",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H1",
+      "core_question": "Describe postoperative treatment resource utilization and treatment intensity.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Analyze postoperative treatment resource utilization in the cohort.",
+      "required_or_expected_evidence": "Recognize that the task concerns utilization rather than direct cost.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "CM",
+        "SG"
+      ]
+    },
+    {
+      "id": "H1-A",
+      "benchmark_id": "HCC-029",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H1",
+      "core_question": "Describe postoperative treatment resource utilization and treatment intensity.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Analyze postoperative treatment resource utilization by quantifying use and timing of TACE, targeted therapy, immunotherapy, postoperative retreatment, and concomitant medications.",
+      "required_or_expected_evidence": "Use procedure and drug counts with dates as utilization proxies.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "CM",
+        "SG"
+      ]
+    },
+    {
+      "id": "H1-M",
+      "benchmark_id": "HCC-030",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H1",
+      "core_question": "Describe postoperative treatment resource utilization and treatment intensity.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Quantify treatment-utilization intensity by deriving per-subject counts and time-to-first-use for `TACE.TACEDAT`, `TART.TARSDAT`, `IMU.IMUSDAT`, `PATE.PATEYN`/`PATETR*`, and `CM.CMCAT`/`CMSTDAT`; summarize utilization distributions and stratify by `BCLC.BCLC` and recurrence status when feasible.",
+      "required_or_expected_evidence": "Explicitly state that no direct cost or billing variables are present.",
+      "primary_data_sources": [
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "CM",
+        "SG"
+      ]
+    },
+    {
+      "id": "H2-G",
+      "benchmark_id": "HCC-031",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H2",
+      "core_question": "Estimate follow-up and testing burden as a resource-use proxy.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Estimate follow-up and testing burden associated with the RWS cohort.",
+      "required_or_expected_evidence": "Use visit and form/test counts as burden proxies.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "ECOG",
+        "SF"
+      ]
+    },
+    {
+      "id": "H2-A",
+      "benchmark_id": "HCC-032",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H2",
+      "core_question": "Estimate follow-up and testing burden as a resource-use proxy.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Estimate follow-up and testing burden by counting follow-up visits, efficacy assessments, laboratory panels, tumor-marker checks, coagulation tests, ECOG assessments, and QoL forms per patient.",
+      "required_or_expected_evidence": "Summarize burden by patient and visit.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "ECOG",
+        "SF"
+      ]
+    },
+    {
+      "id": "H2-M",
+      "benchmark_id": "HCC-033",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H2",
+      "core_question": "Estimate follow-up and testing burden as a resource-use proxy.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Build a follow-up resource-burden profile by counting records in `CPH_FT`, `VT`, `LB_AFP`, `LB_BB`, `LB_BR`, `LB_TT`, `ECOG`, and `SF`; compute total follow-up forms/tests, median counts per subject, and distribution by `Visit_No`; use `SG.SGDAT` and latest `VT.VTDAT1`/`VT.VTDAT2` to contextualize burden over time.",
+      "required_or_expected_evidence": "Frame the result as utilization burden, not economic cost.",
+      "primary_data_sources": [
+        "CPH_FT",
+        "VT",
+        "LB_AFP",
+        "LB_BB",
+        "LB_BR",
+        "LB_TT",
+        "ECOG",
+        "SF"
+      ]
+    },
+    {
+      "id": "H3-G",
+      "benchmark_id": "HCC-034",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H3",
+      "core_question": "Use SF-12 availability and treatment intensity to assess QoL/resource-use feasibility.",
+      "prompt_level_code": "G",
+      "prompt_level": "Goal",
+      "prompt_text": "Explore quality-of-life evidence and its relationship to treatment burden.",
+      "required_or_expected_evidence": "Discover SF-12 sparsity and avoid overclaiming.",
+      "primary_data_sources": [
+        "SF",
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "VT"
+      ]
+    },
+    {
+      "id": "H3-A",
+      "benchmark_id": "HCC-035",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H3",
+      "core_question": "Use SF-12 availability and treatment intensity to assess QoL/resource-use feasibility.",
+      "prompt_level_code": "A",
+      "prompt_level": "Goal+Approach",
+      "prompt_text": "Explore QoL and treatment burden using SF-12 items when available; summarize missingness and compare available QoL responses across treatment-utilization groups.",
+      "required_or_expected_evidence": "Emphasize sparse SF item completeness.",
+      "primary_data_sources": [
+        "SF",
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "VT"
+      ]
+    },
+    {
+      "id": "H3-M",
+      "benchmark_id": "HCC-036",
+      "objective_code": "H",
+      "objective": "Health economics and resource use",
+      "core_question_id": "H3",
+      "core_question": "Use SF-12 availability and treatment intensity to assess QoL/resource-use feasibility.",
+      "prompt_level_code": "M",
+      "prompt_level": "Goal+Method",
+      "prompt_text": "Analyze QoL/resource-use proxy feasibility by inspecting `SF.SFYN` and `SF1`--`SF12`; compute complete-item availability; when enough records exist, summarize item-level or total scores by exposure groups from `TACE`, `TART`, `IMU`, and `PATE`; otherwise report feasibility and missingness only.",
+      "required_or_expected_evidence": "Terminate formal QoL comparison when usable SF-12 item records are too sparse.",
+      "primary_data_sources": [
+        "SF",
+        "TACE",
+        "TART",
+        "IMU",
+        "PATE",
+        "VT"
+      ]
+    }
+  ]
+}

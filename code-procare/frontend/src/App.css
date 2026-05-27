@@ -1,0 +1,7 @@
+/* Reset default Vite styles to allow full-screen dashboard */
+#root {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}

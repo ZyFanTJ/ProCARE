@@ -1,0 +1,122 @@
+
+/* Stats Toolbox Page Styles - Matching Projects Style */
+
+.toolbox-container {
+  padding: 24px;
+  animation: fadeIn 0.5s ease-out;
+  min-height: 100vh;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header Styling */
+.toolbox-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+[data-theme='dark'] .toolbox-header {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.toolbox-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Glassmorphic Card for Tools */
+.tool-card {
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+}
+
+[data-theme='dark'] .tool-card {
+  background: rgba(24, 24, 27, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+.tool-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.1) !important;
+  border-color: var(--primary-color) !important;
+}
+
+[data-theme='dark'] .tool-card:hover {
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.4) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.tool-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 16px;
+  transition: transform 0.3s ease;
+}
+
+.tool-card:hover .tool-icon-wrapper {
+  transform: scale(1.1);
+}
+
+.tool-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.tool-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Category Tag */
+.tool-category {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(0,0,0,0.05);
+  color: var(--text-secondary);
+}
+
+[data-theme='dark'] .tool-category {
+  background: rgba(255,255,255,0.1);
+}

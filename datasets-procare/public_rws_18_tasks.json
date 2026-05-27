@@ -1,0 +1,597 @@
+{
+  "schema_version": "public-rws-18-tasks-v1",
+  "suite": {
+    "name": "Public-RWS-18",
+    "local_folder": "rws_public_datasets_bundle",
+    "dataset_count": 3,
+    "objective_count": 6,
+    "task_count": 18,
+    "description": "External validation suite for ProCARE profile-IR-certificate transfer on three public health datasets."
+  },
+  "source": {
+    "manuscript_file": "paper/neurips_2026_appendix_body.tex",
+    "source_listing": "lst:public-rws-prompts",
+    "source_tables": [
+      "tab:public_rws_datasets",
+      "tab:public_rws_tasks",
+      "tab:public_rws_claim_policy"
+    ],
+    "export_note": "Extracted from the Public-RWS-18 prompt listing in the ProCARE appendix."
+  },
+  "prompt_levels": [
+    {
+      "code": "L",
+      "name": "Low",
+      "description": "Low-specificity task objective; system must discover feasible variables and limitations."
+    },
+    {
+      "code": "M",
+      "name": "Medium",
+      "description": "Medium-specificity prompt with approach-level table or variable guidance."
+    },
+    {
+      "code": "H",
+      "name": "High",
+      "description": "High-specificity prompt with concrete fields, outputs, and claim-scope constraints."
+    }
+  ],
+  "datasets": [
+    {
+      "name": "UCI Diabetes",
+      "code": "UCI",
+      "local_folder": "uci_diabetes_130_us_hospitals",
+      "main_files": [
+        "extracted/diabetic_data.csv",
+        "extracted/IDS_mapping.csv"
+      ],
+      "structure": "101,766 encounters, 50 columns; department-split workbook is used only as a sheet-navigation variant.",
+      "task_focus": "Readmission proxy, medication process, utilization, coded variables, missingness.",
+      "boundary": "Encounter-level data with limited longitudinal structure.",
+      "allowed_claims": "Descriptive and readmission-proxy association claims.",
+      "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+    },
+    {
+      "name": "NHANES",
+      "code": "NHANES",
+      "local_folder": "nhanes_2017_2018_subset",
+      "main_files": [
+        "DEMO_J.XPT",
+        "BMX_J.XPT",
+        "BPX_J.XPT",
+        "DIQ_J.XPT",
+        "GHB_J.XPT",
+        "GLU_J.XPT",
+        "MCQ_J.XPT",
+        "RXQ_RX_J.XPT",
+        "TCHOL_J.XPT",
+        "HDL_J.XPT"
+      ],
+      "structure": "10 linked XPT/CSV tables with 3,036-19,643 rows per table, linked by SEQN.",
+      "task_focus": "Survey cohort construction, labs, medications, conditions, demographic covariates.",
+      "boundary": "Cross-sectional survey data, not EHR.",
+      "allowed_claims": "Descriptive and cross-sectional association claims.",
+      "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+    },
+    {
+      "name": "TCGA-LIHC",
+      "code": "TCGA",
+      "local_folder": "tcga_lihc_gdc_clinical",
+      "main_files": [
+        "gdc_tcga_lihc_clinical_cases.tsv"
+      ],
+      "structure": "377 cases, 137 clinical metadata columns.",
+      "task_focus": "HCC metadata, vital status, treatment fields, follow-up proxy fields.",
+      "boundary": "Cancer registry-like clinical metadata, not routine-care EHR.",
+      "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+      "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "U1",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "objective": "Readmission proxy profiling",
+      "contract_stressor": "Outcome binding, coded variables, missingness, conservative claim scope.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      }
+    },
+    {
+      "id": "U2",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "objective": "Medication and utilization analysis",
+      "contract_stressor": "Exposure/proxy roles, subgroup aggregation, artifact traceability.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      }
+    },
+    {
+      "id": "N1",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "objective": "Diabetes/cardiometabolic cohort analysis",
+      "contract_stressor": "Multi-table joins by SEQN, lab-defined variables, survey-table grounding.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      }
+    },
+    {
+      "id": "N2",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "objective": "Medication and condition association analysis",
+      "contract_stressor": "Questionnaire, laboratory, and prescription-medication grounding under a cross-sectional claim policy.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      }
+    },
+    {
+      "id": "T1",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "objective": "HCC case and vital-status profiling",
+      "contract_stressor": "Domain transfer, oncology metadata grounding, missingness disclosure.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      }
+    },
+    {
+      "id": "T2",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "objective": "Treatment/follow-up metadata analysis",
+      "contract_stressor": "Sparse fields, proxy endpoint handling, limitation reporting.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "U1-L",
+      "benchmark_id": "PUBLIC-RWS-001",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "local_folder": "uci_diabetes_130_us_hospitals",
+      "objective_id": "U1",
+      "objective": "Readmission proxy profiling",
+      "prompt_level_code": "L",
+      "prompt_level": "Low",
+      "topic": "Analyze the diabetes hospital encounter data and identify which patient groups appear to have higher readmission burden.",
+      "prompt_text": "Analyze the diabetes hospital encounter data and identify which patient groups appear to have higher readmission burden.",
+      "contract_stressor": "Outcome binding, coded variables, missingness, conservative claim scope.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      },
+      "main_files": [
+        "extracted/diabetic_data.csv",
+        "extracted/IDS_mapping.csv"
+      ]
+    },
+    {
+      "id": "U1-M",
+      "benchmark_id": "PUBLIC-RWS-002",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "local_folder": "uci_diabetes_130_us_hospitals",
+      "objective_id": "U1",
+      "objective": "Readmission proxy profiling",
+      "prompt_level_code": "M",
+      "prompt_level": "Medium",
+      "topic": "Using the readmitted field as a proxy outcome, summarize early-readmission patterns by age, admission type, discharge disposition, and prior utilization variables.",
+      "prompt_text": "Using the readmitted field as a proxy outcome, summarize early-readmission patterns by age, admission type, discharge disposition, and prior utilization variables.",
+      "contract_stressor": "Outcome binding, coded variables, missingness, conservative claim scope.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      },
+      "main_files": [
+        "extracted/diabetic_data.csv",
+        "extracted/IDS_mapping.csv"
+      ]
+    },
+    {
+      "id": "U1-H",
+      "benchmark_id": "PUBLIC-RWS-003",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "local_folder": "uci_diabetes_130_us_hospitals",
+      "objective_id": "U1",
+      "objective": "Readmission proxy profiling",
+      "prompt_level_code": "H",
+      "prompt_level": "High",
+      "topic": "Using readmitted = \"<30\" as the early-readmission proxy outcome, compute subgroup-level rates by age band, admission_type_id, discharge_disposition_id, number_inpatient, and number_emergency. Produce a table, one figure, and a report restricted to descriptive or proxy-association claims with evidence certificates for all factual statements.",
+      "prompt_text": "Using readmitted = \"<30\" as the early-readmission proxy outcome, compute subgroup-level rates by age band, admission_type_id, discharge_disposition_id, number_inpatient, and number_emergency. Produce a table, one figure, and a report restricted to descriptive or proxy-association claims with evidence certificates for all factual statements.",
+      "contract_stressor": "Outcome binding, coded variables, missingness, conservative claim scope.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      },
+      "main_files": [
+        "extracted/diabetic_data.csv",
+        "extracted/IDS_mapping.csv"
+      ]
+    },
+    {
+      "id": "U2-L",
+      "benchmark_id": "PUBLIC-RWS-004",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "local_folder": "uci_diabetes_130_us_hospitals",
+      "objective_id": "U2",
+      "objective": "Medication and utilization analysis",
+      "prompt_level_code": "L",
+      "prompt_level": "Low",
+      "topic": "Analyze whether medication and hospital-utilization patterns differ across diabetes encounters.",
+      "prompt_text": "Analyze whether medication and hospital-utilization patterns differ across diabetes encounters.",
+      "contract_stressor": "Exposure/proxy roles, subgroup aggregation, artifact traceability.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      },
+      "main_files": [
+        "extracted/diabetic_data.csv",
+        "extracted/IDS_mapping.csv"
+      ]
+    },
+    {
+      "id": "U2-M",
+      "benchmark_id": "PUBLIC-RWS-005",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "local_folder": "uci_diabetes_130_us_hospitals",
+      "objective_id": "U2",
+      "objective": "Medication and utilization analysis",
+      "prompt_level_code": "M",
+      "prompt_level": "Medium",
+      "topic": "Summarize insulin, change, diabetesMed, A1Cresult, time_in_hospital, num_lab_procedures, num_medications, and num_procedures, and describe any supported association with readmitted.",
+      "prompt_text": "Summarize insulin, change, diabetesMed, A1Cresult, time_in_hospital, num_lab_procedures, num_medications, and num_procedures, and describe any supported association with readmitted.",
+      "contract_stressor": "Exposure/proxy roles, subgroup aggregation, artifact traceability.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      },
+      "main_files": [
+        "extracted/diabetic_data.csv",
+        "extracted/IDS_mapping.csv"
+      ]
+    },
+    {
+      "id": "U2-H",
+      "benchmark_id": "PUBLIC-RWS-006",
+      "dataset": "UCI Diabetes",
+      "dataset_code": "UCI",
+      "local_folder": "uci_diabetes_130_us_hospitals",
+      "objective_id": "U2",
+      "objective": "Medication and utilization analysis",
+      "prompt_level_code": "H",
+      "prompt_level": "High",
+      "topic": "Compute utilization summaries for time_in_hospital, num_lab_procedures, num_medications, and num_procedures stratified by insulin, change, and diabetesMed. Compare early-readmission proxy rates across medication-process groups, and avoid causal treatment-effect language.",
+      "prompt_text": "Compute utilization summaries for time_in_hospital, num_lab_procedures, num_medications, and num_procedures stratified by insulin, change, and diabetesMed. Compare early-readmission proxy rates across medication-process groups, and avoid causal treatment-effect language.",
+      "contract_stressor": "Exposure/proxy roles, subgroup aggregation, artifact traceability.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and readmission-proxy association claims.",
+        "forbidden_claims": "Causal treatment effect, safety conclusion, longitudinal endpoint claim."
+      },
+      "main_files": [
+        "extracted/diabetic_data.csv",
+        "extracted/IDS_mapping.csv"
+      ]
+    },
+    {
+      "id": "N1-L",
+      "benchmark_id": "PUBLIC-RWS-007",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "local_folder": "nhanes_2017_2018_subset",
+      "objective_id": "N1",
+      "objective": "Diabetes/cardiometabolic cohort analysis",
+      "prompt_level_code": "L",
+      "prompt_level": "Low",
+      "topic": "Use the NHANES tables to profile diabetes and cardiometabolic risk patterns in the population sample.",
+      "prompt_text": "Use the NHANES tables to profile diabetes and cardiometabolic risk patterns in the population sample.",
+      "contract_stressor": "Multi-table joins by SEQN, lab-defined variables, survey-table grounding.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      },
+      "main_files": [
+        "DEMO_J.XPT",
+        "BMX_J.XPT",
+        "BPX_J.XPT",
+        "DIQ_J.XPT",
+        "GHB_J.XPT",
+        "GLU_J.XPT",
+        "MCQ_J.XPT",
+        "RXQ_RX_J.XPT",
+        "TCHOL_J.XPT",
+        "HDL_J.XPT"
+      ]
+    },
+    {
+      "id": "N1-M",
+      "benchmark_id": "PUBLIC-RWS-008",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "local_folder": "nhanes_2017_2018_subset",
+      "objective_id": "N1",
+      "objective": "Diabetes/cardiometabolic cohort analysis",
+      "prompt_level_code": "M",
+      "prompt_level": "Medium",
+      "topic": "Join demographics, examination, blood pressure, diabetes questionnaire, laboratory, and medical-condition tables by SEQN. Summarize diabetes-related variables and cardiometabolic measurements by age and sex.",
+      "prompt_text": "Join demographics, examination, blood pressure, diabetes questionnaire, laboratory, and medical-condition tables by SEQN. Summarize diabetes-related variables and cardiometabolic measurements by age and sex.",
+      "contract_stressor": "Multi-table joins by SEQN, lab-defined variables, survey-table grounding.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      },
+      "main_files": [
+        "DEMO_J.XPT",
+        "BMX_J.XPT",
+        "BPX_J.XPT",
+        "DIQ_J.XPT",
+        "GHB_J.XPT",
+        "GLU_J.XPT",
+        "MCQ_J.XPT",
+        "RXQ_RX_J.XPT",
+        "TCHOL_J.XPT",
+        "HDL_J.XPT"
+      ]
+    },
+    {
+      "id": "N1-H",
+      "benchmark_id": "PUBLIC-RWS-009",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "local_folder": "nhanes_2017_2018_subset",
+      "objective_id": "N1",
+      "objective": "Diabetes/cardiometabolic cohort analysis",
+      "prompt_level_code": "H",
+      "prompt_level": "High",
+      "topic": "Construct a cross-sectional NHANES cohort using SEQN-linked tables. Define diabetes-related status using supported questionnaire or laboratory fields, summarize blood pressure and relevant laboratory measures by demographic subgroup, and report only descriptive or cross-sectional association claims.",
+      "prompt_text": "Construct a cross-sectional NHANES cohort using SEQN-linked tables. Define diabetes-related status using supported questionnaire or laboratory fields, summarize blood pressure and relevant laboratory measures by demographic subgroup, and report only descriptive or cross-sectional association claims.",
+      "contract_stressor": "Multi-table joins by SEQN, lab-defined variables, survey-table grounding.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      },
+      "main_files": [
+        "DEMO_J.XPT",
+        "BMX_J.XPT",
+        "BPX_J.XPT",
+        "DIQ_J.XPT",
+        "GHB_J.XPT",
+        "GLU_J.XPT",
+        "MCQ_J.XPT",
+        "RXQ_RX_J.XPT",
+        "TCHOL_J.XPT",
+        "HDL_J.XPT"
+      ]
+    },
+    {
+      "id": "N2-L",
+      "benchmark_id": "PUBLIC-RWS-010",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "local_folder": "nhanes_2017_2018_subset",
+      "objective_id": "N2",
+      "objective": "Medication and condition association analysis",
+      "prompt_level_code": "L",
+      "prompt_level": "Low",
+      "topic": "Analyze how prescription medication records relate to self-reported medical conditions in NHANES.",
+      "prompt_text": "Analyze how prescription medication records relate to self-reported medical conditions in NHANES.",
+      "contract_stressor": "Questionnaire, laboratory, and prescription-medication grounding under a cross-sectional claim policy.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      },
+      "main_files": [
+        "DEMO_J.XPT",
+        "BMX_J.XPT",
+        "BPX_J.XPT",
+        "DIQ_J.XPT",
+        "GHB_J.XPT",
+        "GLU_J.XPT",
+        "MCQ_J.XPT",
+        "RXQ_RX_J.XPT",
+        "TCHOL_J.XPT",
+        "HDL_J.XPT"
+      ]
+    },
+    {
+      "id": "N2-M",
+      "benchmark_id": "PUBLIC-RWS-011",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "local_folder": "nhanes_2017_2018_subset",
+      "objective_id": "N2",
+      "objective": "Medication and condition association analysis",
+      "prompt_level_code": "M",
+      "prompt_level": "Medium",
+      "topic": "Join prescription medication, medical conditions, demographics, and laboratory tables by SEQN. Summarize medication exposure groups and compare supported condition or laboratory profiles.",
+      "prompt_text": "Join prescription medication, medical conditions, demographics, and laboratory tables by SEQN. Summarize medication exposure groups and compare supported condition or laboratory profiles.",
+      "contract_stressor": "Questionnaire, laboratory, and prescription-medication grounding under a cross-sectional claim policy.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      },
+      "main_files": [
+        "DEMO_J.XPT",
+        "BMX_J.XPT",
+        "BPX_J.XPT",
+        "DIQ_J.XPT",
+        "GHB_J.XPT",
+        "GLU_J.XPT",
+        "MCQ_J.XPT",
+        "RXQ_RX_J.XPT",
+        "TCHOL_J.XPT",
+        "HDL_J.XPT"
+      ]
+    },
+    {
+      "id": "N2-H",
+      "benchmark_id": "PUBLIC-RWS-012",
+      "dataset": "NHANES",
+      "dataset_code": "NHANES",
+      "local_folder": "nhanes_2017_2018_subset",
+      "objective_id": "N2",
+      "objective": "Medication and condition association analysis",
+      "prompt_level_code": "H",
+      "prompt_level": "High",
+      "topic": "Using SEQN-linked medication and condition tables, construct medication-exposure groups when supported by the codebooks, summarize condition prevalence and laboratory measurements, and produce a report that explicitly states cross-sectional design limitations.",
+      "prompt_text": "Using SEQN-linked medication and condition tables, construct medication-exposure groups when supported by the codebooks, summarize condition prevalence and laboratory measurements, and produce a report that explicitly states cross-sectional design limitations.",
+      "contract_stressor": "Questionnaire, laboratory, and prescription-medication grounding under a cross-sectional claim policy.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive and cross-sectional association claims.",
+        "forbidden_claims": "Temporal effect, incidence claim, causal effect."
+      },
+      "main_files": [
+        "DEMO_J.XPT",
+        "BMX_J.XPT",
+        "BPX_J.XPT",
+        "DIQ_J.XPT",
+        "GHB_J.XPT",
+        "GLU_J.XPT",
+        "MCQ_J.XPT",
+        "RXQ_RX_J.XPT",
+        "TCHOL_J.XPT",
+        "HDL_J.XPT"
+      ]
+    },
+    {
+      "id": "T1-L",
+      "benchmark_id": "PUBLIC-RWS-013",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "local_folder": "tcga_lihc_gdc_clinical",
+      "objective_id": "T1",
+      "objective": "HCC case and vital-status profiling",
+      "prompt_level_code": "L",
+      "prompt_level": "Low",
+      "topic": "Profile the TCGA-LIHC clinical metadata and summarize major patient, diagnosis, and vital-status patterns.",
+      "prompt_text": "Profile the TCGA-LIHC clinical metadata and summarize major patient, diagnosis, and vital-status patterns.",
+      "contract_stressor": "Domain transfer, oncology metadata grounding, missingness disclosure.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      },
+      "main_files": [
+        "gdc_tcga_lihc_clinical_cases.tsv"
+      ]
+    },
+    {
+      "id": "T1-M",
+      "benchmark_id": "PUBLIC-RWS-014",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "local_folder": "tcga_lihc_gdc_clinical",
+      "objective_id": "T1",
+      "objective": "HCC case and vital-status profiling",
+      "prompt_level_code": "M",
+      "prompt_level": "Medium",
+      "topic": "Summarize demographics, diagnosis-related fields, vital status, and available follow-up-related fields in TCGA-LIHC. Identify missingness and fields that can support survival-proxy reporting.",
+      "prompt_text": "Summarize demographics, diagnosis-related fields, vital status, and available follow-up-related fields in TCGA-LIHC. Identify missingness and fields that can support survival-proxy reporting.",
+      "contract_stressor": "Domain transfer, oncology metadata grounding, missingness disclosure.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      },
+      "main_files": [
+        "gdc_tcga_lihc_clinical_cases.tsv"
+      ]
+    },
+    {
+      "id": "T1-H",
+      "benchmark_id": "PUBLIC-RWS-015",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "local_folder": "tcga_lihc_gdc_clinical",
+      "objective_id": "T1",
+      "objective": "HCC case and vital-status profiling",
+      "prompt_level_code": "H",
+      "prompt_level": "High",
+      "topic": "Using TCGA-LIHC clinical metadata, produce a case-profile table covering age, sex, diagnosis-related fields, vital status, days-to-death or follow-up-related fields when available, and missingness. Report only descriptive oncology-metadata claims with evidence certificates.",
+      "prompt_text": "Using TCGA-LIHC clinical metadata, produce a case-profile table covering age, sex, diagnosis-related fields, vital status, days-to-death or follow-up-related fields when available, and missingness. Report only descriptive oncology-metadata claims with evidence certificates.",
+      "contract_stressor": "Domain transfer, oncology metadata grounding, missingness disclosure.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      },
+      "main_files": [
+        "gdc_tcga_lihc_clinical_cases.tsv"
+      ]
+    },
+    {
+      "id": "T2-L",
+      "benchmark_id": "PUBLIC-RWS-016",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "local_folder": "tcga_lihc_gdc_clinical",
+      "objective_id": "T2",
+      "objective": "Treatment/follow-up metadata analysis",
+      "prompt_level_code": "L",
+      "prompt_level": "Low",
+      "topic": "Analyze whether available treatment and follow-up metadata in TCGA-LIHC support subgroup comparisons.",
+      "prompt_text": "Analyze whether available treatment and follow-up metadata in TCGA-LIHC support subgroup comparisons.",
+      "contract_stressor": "Sparse fields, proxy endpoint handling, limitation reporting.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      },
+      "main_files": [
+        "gdc_tcga_lihc_clinical_cases.tsv"
+      ]
+    },
+    {
+      "id": "T2-M",
+      "benchmark_id": "PUBLIC-RWS-017",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "local_folder": "tcga_lihc_gdc_clinical",
+      "objective_id": "T2",
+      "objective": "Treatment/follow-up metadata analysis",
+      "prompt_level_code": "M",
+      "prompt_level": "Medium",
+      "topic": "Identify treatment-related, diagnosis-related, and follow-up-related fields in TCGA-LIHC, assess their completeness, and perform only comparisons supported by valid profile entries.",
+      "prompt_text": "Identify treatment-related, diagnosis-related, and follow-up-related fields in TCGA-LIHC, assess their completeness, and perform only comparisons supported by valid profile entries.",
+      "contract_stressor": "Sparse fields, proxy endpoint handling, limitation reporting.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      },
+      "main_files": [
+        "gdc_tcga_lihc_clinical_cases.tsv"
+      ]
+    },
+    {
+      "id": "T2-H",
+      "benchmark_id": "PUBLIC-RWS-018",
+      "dataset": "TCGA-LIHC",
+      "dataset_code": "TCGA",
+      "local_folder": "tcga_lihc_gdc_clinical",
+      "objective_id": "T2",
+      "objective": "Treatment/follow-up metadata analysis",
+      "prompt_level_code": "H",
+      "prompt_level": "High",
+      "topic": "Using TCGA-LIHC clinical metadata, identify valid treatment-related and follow-up-related fields, summarize completeness by subgroup, and generate a conservative report that distinguishes observed metadata patterns from treatment-effect or causal claims.",
+      "prompt_text": "Using TCGA-LIHC clinical metadata, identify valid treatment-related and follow-up-related fields, summarize completeness by subgroup, and generate a conservative report that distinguishes observed metadata patterns from treatment-effect or causal claims.",
+      "contract_stressor": "Sparse fields, proxy endpoint handling, limitation reporting.",
+      "claim_policy": {
+        "allowed_claims": "Descriptive oncology metadata and follow-up-proxy claims.",
+        "forbidden_claims": "Treatment efficacy, causal survival effect, routine-care EHR claim."
+      },
+      "main_files": [
+        "gdc_tcga_lihc_clinical_cases.tsv"
+      ]
+    }
+  ]
+}

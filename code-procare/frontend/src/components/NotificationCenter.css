@@ -1,0 +1,77 @@
+.notification-popover {
+  width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  background-color: var(--bg-color-secondary);
+}
+
+.notification-popover-content {
+  padding: 16px;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.notification-list-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  background-color: rgba(24, 144, 255, 0.05);
+}
+
+.notification-item:hover {
+  background-color: var(--bg-color-hover);
+}
+
+.notification-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.notification-footer {
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.notification-btn {
+  color: var(--text-primary);
+  transition: color 0.3s;
+}
+
+.notification-btn:hover {
+  color: var(--primary-color);
+}
+
+/* Scrollbar styling for notification list */
+.notification-list-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list-wrapper::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 3px;
+}
+
+.notification-list-wrapper::-webkit-scrollbar-track {
+  background-color: transparent;
+}

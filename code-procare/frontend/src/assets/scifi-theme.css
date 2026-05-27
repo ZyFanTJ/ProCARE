@@ -1,0 +1,187 @@
+/* Deep Nexus Theme - Sci-Fi / Cyberpunk Style */
+
+[data-theme='dark'] {
+  /* Core Palette */
+  --bg-void: #030712;
+  --bg-slate: #0B1221;
+  --bg-slate-glass: rgba(11, 18, 33, 0.7);
+  --bg-component: #0B1221;
+  --bg-app: #030712;
+  --active-bg: rgba(6, 182, 212, 0.1);
+  --border-subtle: rgba(30, 41, 59, 0.8);
+  --border-color: rgba(30, 41, 59, 0.8);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  
+  --neon-cyan: #06B6D4;
+  --neon-cyan-dim: rgba(6, 182, 212, 0.2);
+  --neon-cyan-glow: rgba(6, 182, 212, 0.5);
+  
+  --neon-purple: #8B5CF6;
+  --neon-green: #10B981;
+  
+  --text-starlight: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  
+  --primary-color: #06B6D4;
+  --primary-hover: #0891B2;
+  
+  --font-display: 'Rajdhani', 'Orbitron', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+[data-theme='dark'] body {
+  background-color: var(--bg-void);
+  background-image: 
+    linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  font-family: var(--font-body);
+  color: var(--text-starlight);
+}
+
+/* Headings */
+[data-theme='dark'] h1, 
+[data-theme='dark'] h2, 
+[data-theme='dark'] h3, 
+[data-theme='dark'] h4, 
+[data-theme='dark'] h5, 
+[data-theme='dark'] h6, 
+[data-theme='dark'] .ant-card-head-title,
+[data-theme='dark'] .logo-title {
+  font-family: var(--font-display) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Glassmorphism Cards */
+[data-theme='dark'] .sci-fi-card {
+  background: var(--bg-slate-glass) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme='dark'] .sci-fi-card:hover {
+  border-color: var(--neon-cyan-glow) !important;
+  box-shadow: 0 0 15px var(--neon-cyan-dim), inset 0 0 20px rgba(6, 182, 212, 0.05);
+  transform: translateY(-2px);
+}
+
+/* HUD Corner Markers */
+[data-theme='dark'] .sci-fi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 12px; height: 12px;
+  border-top: 2px solid var(--neon-cyan);
+  border-left: 2px solid var(--neon-cyan);
+  opacity: 0.3;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+[data-theme='dark'] .sci-fi-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 12px; height: 12px;
+  border-bottom: 2px solid var(--neon-cyan);
+  border-right: 2px solid var(--neon-cyan);
+  opacity: 0.3;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+[data-theme='dark'] .sci-fi-card:hover::before,
+[data-theme='dark'] .sci-fi-card:hover::after {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--neon-cyan);
+}
+
+/* Stat Cards Specifics */
+[data-theme='dark'] .stat-card .ant-statistic-title {
+  color: var(--text-muted) !important;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+[data-theme='dark'] .stat-card .ant-statistic-content-value {
+  color: var(--text-starlight) !important;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Navigation & Layout */
+[data-theme='dark'] .app-sider {
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-void) !important;
+}
+
+[data-theme='dark'] .app-header {
+  background: rgba(11, 18, 33, 0.8) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Ant Design Overrides */
+[data-theme='dark'] .ant-btn-primary:disabled {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+[data-theme='dark'] .ant-menu-item-selected {
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.15) 0%, transparent 100%) !important;
+  border-left: 3px solid var(--neon-cyan);
+}
+[data-theme='dark'] .ant-menu-item {
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+/* Table Styles */
+[data-theme='dark'] .ant-table {
+  background: transparent !important;
+}
+[data-theme='dark'] .ant-table-thead > tr > th {
+  background: rgba(6, 182, 212, 0.05) !important;
+  color: var(--neon-cyan) !important;
+  font-family: var(--font-display);
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+[data-theme='dark'] .ant-table-tbody > tr > td {
+  border-bottom: 1px solid rgba(30, 41, 59, 0.4) !important;
+}
+[data-theme='dark'] .ant-table-tbody > tr:hover > td {
+  background: rgba(6, 182, 212, 0.05) !important;
+}
+
+/* Scrollbar - Global but styled for dark */
+[data-theme='dark'] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: var(--bg-void);
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-cyan);
+}
+
+/* Animations */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Removed global scanline-overlay */

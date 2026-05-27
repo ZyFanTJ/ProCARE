@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap');
+
+/* Variables */
+.container {
+  /* Default Dark Mode (Sci-Fi) */
+  --kb-bg: #000;
+  --kb-text: #e0f2fe;
+  --kb-text-secondary: #94a3b8; /* Slate-400 */
+  --kb-sidebar-bg: rgba(10, 15, 30, 0.85);
+  --kb-sidebar-border: rgba(0, 255, 255, 0.2);
+  --kb-accent: #00ffff;
+  --kb-accent-glow: rgba(0, 255, 255, 0.5);
+  --kb-item-bg: rgba(255, 255, 255, 0.03);
+  --kb-item-border: rgba(255, 255, 255, 0.05);
+  --kb-item-hover-bg: rgba(0, 255, 255, 0.1);
+  --kb-item-hover-border: rgba(0, 255, 255, 0.3);
+  --kb-grid-color: rgba(0, 255, 255, 0.03);
+  --kb-card-bg: rgba(255, 255, 255, 0.05);
+  
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 80px); /* Adjust for header */
+  background: var(--kb-bg);
+  color: var(--kb-text);
+  font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Light Mode Overrides (Clean Tech) */
+:global([data-theme='light']) .container {
+  --kb-bg: #F1F5F9; /* Slate-100 */
+  --kb-text: #1E293B; /* Slate-800 */
+  --kb-text-secondary: #64748B; /* Slate-500 */
+  --kb-sidebar-bg: rgba(255, 255, 255, 0.9);
+  --kb-sidebar-border: #E2E8F0; /* Slate-200 */
+  --kb-accent: #0369A1; /* Sky-700 (Darker Blue for contrast) */
+  --kb-accent-glow: rgba(3, 105, 161, 0.3);
+  --kb-item-bg: #FFFFFF;
+  --kb-item-border: #E2E8F0;
+  --kb-item-hover-bg: #E0F2FE; /* Sky-50 */
+  --kb-item-hover-border: #BAE6FD; /* Sky-200 */
+  --kb-grid-color: rgba(15, 23, 42, 0.03); /* Dark grid */
+  --kb-card-bg: #FFFFFF;
+}
+
+/* Background Grid Effect */
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(var(--kb-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--kb-grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 320px;
+  background: var(--kb-sidebar-bg);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid var(--kb-sidebar-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.sidebarHeader {
+  padding: 20px;
+  border-bottom: 1px solid var(--kb-sidebar-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--kb-accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px var(--kb-accent-glow); /* Subtle glow even in light mode? Maybe too much */
+  margin: 0;
+}
+:global([data-theme='light']) .title {
+  text-shadow: none; /* Remove glow in light mode for cleaner look */
+  font-weight: 700;
+}
+
+.uploadArea {
+  padding: 20px;
+  border-bottom: 1px solid var(--kb-sidebar-border);
+}
+
+.uploadBox {
+  border: 1px dashed var(--kb-sidebar-border);
+  border-radius: 4px;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--kb-item-bg);
+}
+
+.uploadBox:hover {
+  border-color: var(--kb-accent);
+  background: var(--kb-item-hover-bg);
+  /* box-shadow: 0 0 15px var(--kb-accent-glow) inset; */
+}
+
+.fileList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  background: var(--kb-item-bg);
+  border: 1px solid var(--kb-item-border);
+  border-radius: 4px;
+  transition: all 0.2s;
+  cursor: pointer;
+  color: var(--kb-text);
+}
+
+.fileItem:hover {
+  background: var(--kb-item-hover-bg);
+  border-color: var(--kb-item-hover-border);
+  transform: translateX(5px);
+}
+
+.fileName {
+  color: var(--kb-text);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  font-weight: 500;
+}
+
+.fileMeta {
+  font-size: 10px;
+  color: var(--kb-text-secondary);
+}
+
+.deleteBtn {
+  color: #ff4d4f;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.fileItem:hover .deleteBtn {
+  opacity: 1;
+}
+
+/* Main Content */
+.mainContent {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 20;
+  display: flex;
+  gap: 10px;
+}
+
+.graphContainer {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Scrollbar */
+.fileList::-webkit-scrollbar {
+  width: 6px;
+}
+.fileList::-webkit-scrollbar-track {
+  background: transparent;
+}
+.fileList::-webkit-scrollbar-thumb {
+  background: var(--kb-sidebar-border);
+  border-radius: 3px;
+}
+.fileList::-webkit-scrollbar-thumb:hover {
+  background: var(--kb-accent);
+}
+
+/* Animations */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 var(--kb-accent-glow); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(5px);
+}
+:global([data-theme='light']) .loadingOverlay {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Card Style for List View */
+.card {
+    background: var(--kb-card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--kb-item-border);
+    transition: all 0.3s;
+}
+.card:hover {
+    border-color: var(--kb-accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}

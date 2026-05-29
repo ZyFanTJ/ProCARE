@@ -68,31 +68,53 @@ code/
 
 ## Quick Start
 
-### Requirements
+ProCARE can be launched in two ways: with Docker or by running the backend and frontend manually.
+
+### Option A: Docker
+
+**Requirements**
+
+- Docker and Docker Compose
+
+**Run**
+
+​```bash
+cd code
+docker compose up
+​```
+
+The frontend will be available at `http://127.0.0.1` and the backend at `http://127.0.0.1:8000`. After the system starts, open the frontend, go to the Settings page, and configure your LLM API key.
+
+The `opencode` CLI is preinstalled inside the backend container, so no extra setup is required.
+
+---
+
+### Option B: Manual
+
+**Requirements**
 
 - Python 3.10+
 - Node.js 18+
 - An OpenAI-compatible LLM endpoint
 - `opencode` CLI available on `PATH` for the OpenCode execution runner
 
-### Backend
+**Backend**
 
-
-```powershell
+​```powershell
 cd code/backend
 pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+​```
 
-The backend listens on `http://127.0.0.1:8000` by default. 
+The backend listens on `http://127.0.0.1:8000` by default.
 
-### Frontend
+**Frontend**
 
-```powershell
+​```powershell
 cd code/frontend
 npm install
 npm run dev
-```
+​```
 
 The frontend usually runs at `http://127.0.0.1:5173`. By default it calls `http://127.0.0.1:8000/api`; set `VITE_API_BASE_URL` in `code/frontend/.env` if the backend runs elsewhere.
 
@@ -142,37 +164,37 @@ The screenshots below are stored in `docs/screenshots/`; the corresponding page 
 
 Recent projects, uploads, report counts, and quick navigation into the RWS workflow.
 
-![Dashboard](docs/screenshots/dashboard.png)
+![Dashboard](code/docs/screenshots/dashboard.png)
 
 ### Study Planning
 
 The wizard guides topic entry, Excel upload, profile inspection, plan generation, plan editing, and execution.
 
-![Study planning](docs/screenshots/plan.png)
+![Study planning](code/docs/screenshots/plan.png)
 
 ### Project Panel
 
 Project pages expose the generated study plan, data profile, execution logs, plots, code, and report entry points.
 
-![Project panel](docs/screenshots/project_panel.png)
+![Project panel](code/docs/screenshots/project_panel.png)
 
 ### Code Execution Loop
 
 The execution page streams code-generation and validation logs while preserving generated scripts and artifacts in the job workspace.
 
-![Code execution loop](docs/screenshots/react_coding_loop.png)
+![Code execution loop](code/docs/screenshots/react_coding_loop.png)
 
 ### Section-Level Report Composition
 
 Reports can be generated section by section, regenerated with human notes, assembled into Markdown, and saved back to the job.
 
-![Section-level report composition](docs/screenshots/gen_report_via_section.png)
+![Section-level report composition](code/docs/screenshots/gen_report_via_section.png)
 
 ### Report Review
 
 The report viewer renders Markdown, figures, and export actions for final inspection.
 
-![Report review](docs/screenshots/report_review.png)
+![Report review](code/docs/screenshots/report_review.png)
 
 ## Configuration Notes
 

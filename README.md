@@ -97,7 +97,7 @@ The `opencode` CLI is preinstalled inside the backend container, so no extra set
 - Node.js 18+
 - An OpenAI-compatible LLM endpoint
 - `opencode` CLI available on `PATH` for the OpenCode execution runner
-- - A LaTeX distribution (`xelatex`, `latexmk`) available on `PATH` for paper PDF export
+- A LaTeX distribution (`xelatex`, `latexmk`) available on `PATH` for paper PDF export
 
 
 **Backend**

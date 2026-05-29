@@ -78,10 +78,10 @@ ProCARE can be launched in two ways: with Docker or by running the backend and f
 
 **Run**
 
-​```bash
+```bash
 cd code
 docker compose up
-​```
+```
 
 The frontend will be available at `http://127.0.0.1` and the backend at `http://127.0.0.1:8000`. After the system starts, open the frontend, go to the Settings page, and configure your LLM API key.
 
@@ -100,21 +100,21 @@ The `opencode` CLI is preinstalled inside the backend container, so no extra set
 
 **Backend**
 
-​```powershell
+```powershell
 cd code/backend
 pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-​```
+```
 
 The backend listens on `http://127.0.0.1:8000` by default.
 
 **Frontend**
 
-​```powershell
+```powershell
 cd code/frontend
 npm install
 npm run dev
-​```
+```
 
 The frontend usually runs at `http://127.0.0.1:5173`. By default it calls `http://127.0.0.1:8000/api`; set `VITE_API_BASE_URL` in `code/frontend/.env` if the backend runs elsewhere.
 

@@ -251,6 +251,32 @@ def _get_configured_api_key() -> str:
     return str(settings.get("api_key") or "").strip()
 
 
+def _get_llm_settings_for_opencode() -> Dict[str, str]:
+    """
+    Read LLM settings configured via the frontend Settings page.
+    Returns a dict with api_key, base_url, and model fields (empty strings if missing).
+    """
+    try:
+        settings = SettingsManager().get_settings()
+    except Exception:
+        return {"api_key": "", "base_url": "", "model": ""}
+
+    api_keys = settings.get("api_keys") or {}
+    api_key = ""
+    if isinstance(api_keys, dict):
+        for provider in ("openai", "google", "deepseek", "minimax"):
+            key = str(api_keys.get(provider) or "").strip()
+            if key:
+                api_key = key
+                break
+    if not api_key:
+        api_key = str(settings.get("api_key") or "").strip()
+
+    base_url = str(settings.get("api_base_url") or "").strip()
+    model = str(settings.get("active_model") or "").strip()
+    return {"api_key": api_key, "base_url": base_url, "model": model}
+
+
 class OpenCodeRunner:
     """
     Runner that integrates with the external `opencode` CLI.
@@ -288,7 +314,14 @@ class OpenCodeRunner:
         }
 
     def _write_opencode_config(self) -> Path:
-        config = {
+        """
+        Write opencode.json including a provider definition synced from
+        the backend Settings page (system_settings.json). This frees reviewers
+        from having to run `opencode auth login` manually: the api_base_url,
+        api_key, and active_model configured in the frontend are injected
+        directly into the opencode workspace config.
+        """
+        config: Dict[str, Any] = {
             "$schema": "https://opencode.ai/config.json",
             "permission": {
                 "edit": "allow",
@@ -298,6 +331,23 @@ class OpenCodeRunner:
                 },
             },
         }
+
+        llm = _get_llm_settings_for_opencode()
+        if llm["api_key"] and llm["base_url"] and llm["model"]:
+            config["provider"] = {
+                "procare": {
+                    "name": "ProCARE LLM",
+                    "npm": "@ai-sdk/openai-compatible",
+                    "options": {
+                        "baseURL": llm["base_url"],
+                        "apiKey": llm["api_key"],
+                    },
+                    "models": {
+                        llm["model"]: {"name": llm["model"]},
+                    },
+                }
+            }
+
         config_path = self.work_dir / "opencode.json"
         config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
         return config_path
@@ -413,6 +463,14 @@ class OpenCodeRunner:
         work_dir_str = str(self.work_dir).replace("\\", "/")
         cmd.extend(["--dir", work_dir_str])
 
+        # Resolve model. Priority: explicit caller arg > settings active_model
+        # (prefixed with our injected `procare` provider) > OPENCODE_MODEL env var.
+        # When the settings page provides a model, route it through the
+        # `procare` provider defined in opencode.json by _write_opencode_config().
+        if not model:
+            llm = _get_llm_settings_for_opencode()
+            if llm["api_key"] and llm["base_url"] and llm["model"]:
+                model = f"procare/{llm['model']}"
         if model:
             cmd.extend(["--model", model])
 

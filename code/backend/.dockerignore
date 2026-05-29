@@ -19,3 +19,9 @@ coverage.xml
 .mypy_cache
 .pytest_cache
 .hypotheses
+
+# Runtime artifacts mounted as a volume by docker-compose; never bake them into
+# the image. opencode also creates its own node_modules under jobs/<id>/.opencode/
+# which contains symlinks Docker cannot copy on Windows hosts.
+output/
+audit.db

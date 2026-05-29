@@ -73,7 +73,7 @@ OPENCODE_MODEL_ALIASES = {
     "gpt-5.4": DEFAULT_OPENCODE_MODEL,
     "gpt-5.3-codex": "blt/gpt-5.3-codex",
     "gemini-3-pro-preview": "blt/gemini-3-pro-preview",
-    "deepseek-chat": "deepseek/deepseek-chat",
+    "deepseek-v4-flash": "deepseek/deepseek-v4-flash",
     "deepseek-reasoner": "deepseek/deepseek-reasoner",
     "deepseek-v4-flash": "deepseek/deepseek-v4-flash",
     "deepseek-v4-pro": "deepseek/deepseek-v4-pro",
@@ -101,6 +101,19 @@ def _get_active_opencode_model(model: Optional[str] = None) -> str:
         return env_model
     try:
         settings = SettingsManager().get_settings()
+        # Prefer routing through the injected `procare` provider whenever the
+        # frontend Settings page has supplied a custom api_base_url + api_key
+        # + active_mode
+        # a reviewer's machine.
+        api_base_url = str((settings or {}).get("api_base_url") or "").strip()
+        active_model = str((settings or {}).get("active_model") or "").strip()
+        api_keys = (settings or {}).get("api_keys") or {}
+        has_any_key = isinstance(api_keys, dict) and any(
+            str(api_keys.get(p) or "").strip() for p in ("openai", "google", "deepseek", "minimax")
+        )
+        if api_base_url and active_model and has_any_key:
+            return f"procare/{active_model}"
+
         llm_settings = (settings or {}).get("llm") or {}
         configured_model = (
             _normalize_opencode_model(llm_settings.get("opencode_model"))
@@ -193,6 +206,79 @@ def _select_generated_script(job_dir: Path) -> Path:
     main_py = job_dir / "main.py"
     analysis_py = job_dir / "analysis.py"
     return main_py if main_py.exists() else analysis_py
+
+
+def _self_heal_exec_status(job_dir: Path) -> dict:
+    """
+    If exec_status.json shows running:true but the opencode process has clearly
+    stopped (live log idle for several seconds) and concrete artifacts exist,
+    finalize the status from the artifacts on disk. This protects the UI from
+    getting stuck in 'running' when the SSE stream's finally block was killed
+    (e.g. uvicorn worker timeout or browser disconnection mid-run).
+
+    Returns the (possibly updated) status dict, or an empty dict if no status
+    file exists.
+    """
+    status_path = job_dir / "exec_status.json"
+    if not status_path.exists():
+        return {}
+    try:
+        status = json.loads(status_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    if not isinstance(status, dict) or not status.get("running"):
+        return status
+
+    live_log = job_dir / "opencode_live.log"
+    idle_seconds = 0.0
+    if live_log.exists():
+        idle_seconds = max(0.0, time.time() - live_log.stat().st_mtime)
+    LIVE_LOG_IDLE_THRESHOLD = 30.0
+    if idle_seconds < LIVE_LOG_IDLE_THRESHOLD and live_log.exists():
+        return status
+
+    plots_dir = job_dir / "plots"
+    script_to_run = _select_generated_script(job_dir)
+    figure_ok, figure_errors = _validate_publication_outputs(job_dir)
+    plot_files = _collect_plot_files(plots_dir)
+
+    success = bool(script_to_run.exists() and figure_ok)
+    stderr_parts: list[str] = []
+    if not script_to_run.exists():
+        stderr_parts.append("Generated script not found (analysis.py / main.py).")
+    if not figure_ok:
+        stderr_parts.append("Figure validation failed: " + "; ".join(figure_errors))
+
+    final_status = {
+        "running": False,
+        "success": success,
+        "logs": [
+            {
+                "step": 0,
+                "stdout": (
+                    "Status recovered from artifacts after stream disconnected.\n"
+                    f"See {script_to_run.name} and plots/ for details."
+                ),
+                "stderr": "\n".join(stderr_parts),
+                "code": f"See {script_to_run.name}",
+            }
+        ],
+        "plots": plot_files,
+        "current_step": 1,
+        "max_iters": status.get("max_iters", 1),
+        "report_ready": status.get("report_ready", False),
+        "workspace_dir": str(job_dir),
+        "opencode_live_log": str(live_log),
+        "recovered": True,
+    }
+    try:
+        status_path.write_text(
+            json.dumps(final_status, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    except Exception:
+        pass
+    return final_status
 
 
 def _validate_publication_outputs(job_dir: Path) -> tuple[bool, list[str]]:
@@ -2270,6 +2356,9 @@ async def get_status(job_id: str):
             "current_step": 0,
             "max_iters": 0,
         }
+    healed = _self_heal_exec_status(job_dir)
+    if healed:
+        return healed
     data = json.loads(status_path.read_text(encoding="utf-8"))
     return data
 

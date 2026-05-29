@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Dict, Any
 
-SETTINGS_FILE = Path(__file__).resolve().parents[2] / "system_settings.json"
+SETTINGS_FILE = Path("/app/config/system_settings.json")
 
 DEFAULT_SETTINGS = {
     "systemName": "RWS研究系统",

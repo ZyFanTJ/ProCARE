@@ -1,5 +1,5 @@
 # Stage 1: Build the React application
-FROM m.daocloud.io/docker.io/library/node:18-alpine as build
+FROM m.daocloud.io/docker.io/library/node:18-alpine AS build
 
 WORKDIR /app
 
@@ -15,6 +15,10 @@ RUN npm install
 
 # Copy source code
 COPY . .
+
+# Allow overriding API base URL at build time (empty = use nginx proxy)
+ARG VITE_API_BASE_URL=""
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build the application
 RUN npm run build

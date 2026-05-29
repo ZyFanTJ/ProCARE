@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: procare-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/output:/app/output
+      - settings_data:/app/config
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    container_name: procare-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  banner:
+    image: m.daocloud.io/docker.io/library/alpine:latest
+    container_name: procare-banner
+    depends_on:
+      - backend
+      - frontend
+    command: >
+      sh -c "
+      while ! nc -z backend 8000; do sleep 1; done;
+      sleep 1;
+      echo 'ProCARE ready';
+      echo 'Local: http://localhost:5173/';
+      "
+
+volumes:
+  settings_data:

@@ -14,7 +14,7 @@ const UserProfile = () => {
     const [userInfo, setUserInfo] = useState({
         name: '研究员',
         role: '高级分析师',
-        email: 'researcher@example.com',
+        email: 'anonymous@example.invalid',
         joinDate: '2023-10-15',
         bio: '致力于通过数据驱动的研究发现洞见。专精于金融建模与市场分析。',
         avatar: '',

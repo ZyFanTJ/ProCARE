@@ -30,16 +30,16 @@
 \ifuniqueAffiliation % Standard variant of author block
 \author{
 \makebox[\textwidth][c]{
-作者1\textsuperscript{1}
+Author 1\textsuperscript{1}
 \hspace{1.8cm}
-作者2\textsuperscript{1}
+Author 2\textsuperscript{1}
 \hspace{1.8cm}
-作者3\textsuperscript{2}
+Author 3\textsuperscript{2}
 \hspace{1.8cm}
-作者4\textsuperscript{1,2}
+Author 4\textsuperscript{1,2}
 }\\[0.6em]
-\makebox[\textwidth][c]{\textsuperscript{1} 单位1}\\
-\makebox[\textwidth][c]{\textsuperscript{2} 单位2}\\[0.25em]
+\makebox[\textwidth][c]{\textsuperscript{1} Affiliation 1}\\
+\makebox[\textwidth][c]{\textsuperscript{2} Affiliation 2}\\[0.25em]
 }
 \else
 % Multiple affiliations variant of author block
@@ -49,13 +49,13 @@
 % box is needed for correct spacing with authblk
 \newbox{\orcid}\sbox{\orcid}{\includegraphics[scale=0.06]{orcid.pdf}} 
 \author[1]{%
-	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}David S.~Hippocampus\thanks{\texttt{hippo@cs.cranberry-lemon.edu}}}%
+	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}Author 1\thanks{\texttt{anonymous@example.invalid}}}%
 }
 \author[1,2]{%
-	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}Elias D.~Striatum\thanks{\texttt{stariate@ee.mount-sheikh.edu}}}%
+	\href{https://orcid.org/0000-0000-0000-0000}{\usebox{\orcid}\hspace{1mm}Author 2\thanks{\texttt{anonymous@example.invalid}}}%
 }
-\affil[1]{Department of Computer Science, Cranberry-Lemon University, Pittsburgh, PA 15213}
-\affil[2]{Department of Electrical Engineering, Mount-Sheikh University, Santa Narimana, Levand}
+\affil[1]{Affiliation 1}
+\affil[2]{Affiliation 2}
 \fi
 
 % Uncomment to override  the `A preprint' in the header
@@ -69,7 +69,7 @@
 \hypersetup{
 pdftitle={A template for the arxiv style},
 pdfsubject={q-bio.NC, q-bio.QM},
-pdfauthor={David S.~Hippocampus, Elias D.~Striatum},
+pdfauthor={Author 1, Author 2},
 pdfkeywords={First keyword, Second keyword, More},
 }
 

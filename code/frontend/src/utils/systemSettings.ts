@@ -66,7 +66,7 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   userProfile: {
     name: '研究员',
     role: '高级分析师',
-    email: 'researcher@example.com',
+    email: 'anonymous@example.invalid',
     bio: '致力于通过数据驱动的研究发现洞见。',
     avatar: ''
   }

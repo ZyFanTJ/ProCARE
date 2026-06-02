@@ -118,15 +118,7 @@ async def generate_paper(
         ]
 
     plan_path = job_dir / "plan.json"
-    report_name = str(options.get("report_name") or "").strip() or job_id
-    if plan_path.exists():
-        try:
-            plan = json.loads(plan_path.read_text(encoding="utf-8"))
-            if not str(options.get("report_name") or "").strip():
-                report_name = str(plan.get("topic") or plan.get("objective") or job_id)
-        except Exception:
-            if not str(options.get("report_name") or "").strip():
-                report_name = job_id
+    report_name = str(options.get("report_name") or "").strip()
 
     llm_settings = _resolve_rws_llm_settings(bool(options["llm_enabled"]))
 
@@ -224,9 +216,8 @@ def _run_and_prune_paper_artifacts(job_id: str) -> None:
             intermediate_files=[],
             final_markdown_file=None,
         )
-
-    if work_dir.exists():
-        shutil.rmtree(work_dir, ignore_errors=True)
+        if work_dir.exists():
+            shutil.rmtree(work_dir, ignore_errors=True)
 
 
 async def _parse_generation_options(request: Request) -> dict[str, Any]:

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button, Card, Col, Form, Input, InputNumber, Progress, Radio, Row, Space, Tag, Typography, Upload, message } from 'antd'
 import type { UploadFile, UploadProps } from 'antd'
 import { FilePdfOutlined, FileTextOutlined, FolderOpenOutlined, ReloadOutlined, SaveOutlined, UploadOutlined } from '@ant-design/icons'
 import { fetchPaperStatus, generatePaper, type PaperStatus } from '../api/research'
 import { fetchSettingsFromBackend, loadSettings } from '../utils/systemSettings'
+import { resolveStaticUrl } from '../api/client'
 
 const { Title, Text } = Typography
 
@@ -24,16 +25,6 @@ export default function PaperGenerator() {
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [settings, setSettings] = useState<any>(() => loadSettings() as any)
   const activeModel = settings?.active_model || settings?.llm?.active_model || '未配置'
-
-  const staticPrefix = useMemo(() => {
-    const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-    return baseApi ? baseApi.replace(/\/api$/, '') : ''
-  }, [])
-
-  const resolveStaticUrl = (url?: string | null) => {
-    if (!url) return ''
-    return url.startsWith('/static/') ? `${staticPrefix}${url}` : url
-  }
 
   const refreshStatus = async () => {
     if (!jobId) return
@@ -132,7 +123,7 @@ export default function PaperGenerator() {
               <Row gutter={16}>
                 <Col xs={24} md={14}>
                   <Form.Item label="论文标题" name="report_name">
-                    <Input placeholder="默认使用研究主题" />
+                    <Input placeholder="留空则由大模型自动生成" />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={10}>

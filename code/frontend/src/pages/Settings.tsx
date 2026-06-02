@@ -5,6 +5,8 @@ import { InboxOutlined, SettingOutlined, DollarOutlined, BgColorsOutlined, ApiOu
 import { DEFAULT_SETTINGS, loadSettings, saveSettingsToBackend, fetchSettingsFromBackend, resetSettingsToDefault, SystemSettings } from '../utils/systemSettings'
 import SkillsSettingsComponent from '../components/SkillsSettings'
 
+const API_KEY_PROVIDERS = ['openai', 'anthropic', 'google', 'deepseek', 'qwen', 'minimax'] as const
+
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -14,6 +16,27 @@ function fileToDataUrl(file: File): Promise<string> {
   })
 }
 
+function sanitizeSettingsForForm(settings: SystemSettings): SystemSettings {
+  const next: SystemSettings = {
+    ...settings,
+    api_keys: { ...(settings.api_keys || {}) },
+    model_costs: { ...(settings.model_costs || {}) },
+  }
+
+  return next
+}
+
+function getCurrentThemePreference(): 'light' | 'dark' {
+  return loadSettings().theme || DEFAULT_SETTINGS.theme || 'dark'
+}
+
+function withCurrentTheme(settings: SystemSettings): SystemSettings {
+  return {
+    ...settings,
+    theme: getCurrentThemePreference(),
+  }
+}
+
 export default function Settings() {
   const [form] = Form.useForm<SystemSettings>()
   const [logoPreview, setLogoPreview] = useState<string | undefined>()
@@ -21,6 +44,7 @@ export default function Settings() {
   const [carouselJson, setCarouselJson] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
+  const [persistedSettings, setPersistedSettings] = useState<SystemSettings>(loadSettings())
 
   useEffect(() => {
     initSettings()
@@ -28,20 +52,24 @@ export default function Settings() {
 
   const initSettings = async () => {
     setLoading(true)
-    // First load from local
-    let s = loadSettings()
-    updateForm(s)
-    
-    // Then try fetch from backend
-    const remote = await fetchSettingsFromBackend()
-    if (remote) {
-      updateForm(remote)
+    try {
+      const s = withCurrentTheme(loadSettings())
+      setPersistedSettings(s)
+      updateForm(s)
+
+      const remote = await fetchSettingsFromBackend()
+      if (remote) {
+        const synced = withCurrentTheme(remote)
+        setPersistedSettings(synced)
+        updateForm(synced)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const updateForm = (s: SystemSettings) => {
-    form.setFieldsValue(s)
+    form.setFieldsValue(sanitizeSettingsForForm(s))
     setLogoPreview(s.logoDataUrl)
     setFaviconPreview(s.faviconDataUrl)
     try { 
@@ -61,22 +89,41 @@ export default function Settings() {
     let slides = DEFAULT_SETTINGS.carouselSlides
     try { slides = JSON.parse(carouselJson) } catch { message.error('轮播配置不是合法JSON'); return }
     
-    // Merge with current settings to prevent losing unmounted fields' values
-    const currentSettings = loadSettings()
+    const existingApiKeys = persistedSettings.api_keys || {}
+    const incomingApiKeys = vals.api_keys || {}
+    const mergedApiKeys = { ...existingApiKeys }
+    for (const provider of API_KEY_PROVIDERS) {
+      const value = incomingApiKeys?.[provider]
+      if (typeof value === 'string' && value.trim()) {
+        mergedApiKeys[provider] = value.trim()
+      }
+    }
+
+    const themeTouched = form.isFieldTouched(['theme'])
+    const themeToPersist = themeTouched
+      ? ((vals.theme || persistedSettings.theme || getCurrentThemePreference()) as 'light' | 'dark')
+      : getCurrentThemePreference()
     
     const merged: SystemSettings = { 
-        ...currentSettings,
+        ...persistedSettings,
         ...vals, 
+        theme: themeToPersist,
+        api_keys: mergedApiKeys,
         logoDataUrl: logoPreview, 
         faviconDataUrl: faviconPreview, 
         carouselSlides: slides 
     }
     
     setLoading(true)
-    const success = await saveSettingsToBackend(merged)
-    setLoading(false)
+    let success = false
+    try {
+      success = await saveSettingsToBackend(merged)
+    } finally {
+      setLoading(false)
+    }
     
     if (success) {
+      setPersistedSettings(merged)
       message.success('系统设置已保存')
     } else {
       message.error('保存失败，请检查后端服务连接')
@@ -111,9 +158,14 @@ export default function Settings() {
 
   const onReset = async () => {
     setLoading(true)
-    const defaults = await resetSettingsToDefault()
-    setLoading(false)
+    let defaults: SystemSettings | null = null
+    try {
+      defaults = await resetSettingsToDefault()
+    } finally {
+      setLoading(false)
+    }
     if (defaults) {
+      setPersistedSettings(defaults)
       updateForm(defaults)
       message.success('已恢复默认设置')
     } else {

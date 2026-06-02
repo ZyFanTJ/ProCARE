@@ -5,6 +5,7 @@ import { Card, Checkbox, Input, Button, Space, message, List, Tag, Progress } fr
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { composeReport, fetchSectionsMeta, composeReportAsync, fetchReportStatus, fetchReportSections, generateSection, saveReport } from '../api/research'
+import { resolveStaticUrl } from '../api/client'
 
 export default function ReportComposer() {
   const { jobId } = useParams()
@@ -138,9 +139,7 @@ export default function ReportComposer() {
       const path = pathById[sid]
       if (useExisting && path) {
         try {
-          const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-          const prefix = baseApi ? baseApi.replace(/\/api$/, '') : ''
-          const url = `${prefix}/static/jobs/${jobId}/${path}`
+          const url = resolveStaticUrl(`/static/jobs/${jobId}/${path}`)
           const resp = await fetch(url)
           if (resp.ok) content = await resp.text()
         } catch {}

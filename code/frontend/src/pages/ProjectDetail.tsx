@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, Tabs, Typography, Space, Tag, Button, Image, message, Collapse, Table, Descriptions, Divider } from 'antd'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { fetchStatus, fetchReportPreview, fetchJobPlan, fetchExcelInfo, fetchExecLogs, fetchAnalysisCode, executeJobAsync, streamRunCode } from '../api/research'
+import { resolveStaticUrl } from '../api/client'
 import JsonTree from '../components/JsonTree'
 import CodeViewer from '../components/CodeViewer'
 import PlanPreview from '../components/PlanPreview'
@@ -22,11 +23,6 @@ export default function ProjectDetail() {
   const [codeCollapsed, setCodeCollapsed] = useState<boolean>(true)
   const [terminalLogs, setTerminalLogs] = useState<string[]>([])
   const [terminalStatus, setTerminalStatus] = useState<string>('idle')
-
-  const staticPrefix = useMemo(() => {
-    const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-    return baseApi ? baseApi.replace(/\/api$/, '') : ''
-  }, [])
 
   useEffect(() => {
     if (!jobId) return
@@ -271,7 +267,7 @@ export default function ProjectDetail() {
                     {plots.map((p) => (
                       <div key={p} style={{ border: '1px solid var(--border-color)', borderRadius: 8, padding: 12, background: 'var(--bg-component)' }}>
                         <div style={{ width: '100%', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-app)', borderRadius: 4, overflow: 'hidden' }}>
-                          <Image src={`${staticPrefix}/static/jobs/${jobId}/plots/${p}`} alt={p} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                          <Image src={resolveStaticUrl(`/static/jobs/${jobId}/plots/${p}`)} alt={p} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                         </div>
                         <div style={{ fontSize: 13, marginTop: 8, fontWeight: 500, color: 'var(--text-primary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p}>{p}</div>
                       </div>
@@ -325,7 +321,7 @@ export default function ProjectDetail() {
                       message.error(msg)
                     }
                   }}>重新执行</Button>
-                  <a href={`${staticPrefix}/static/jobs/${jobId}/analysis.py`} target="_blank" rel="noreferrer">在新窗口打开</a>
+                  <a href={resolveStaticUrl(`/static/jobs/${jobId}/analysis.py`)} target="_blank" rel="noreferrer">在新窗口打开</a>
                 </Space>
                 {code ? (
                   <div style={{ maxHeight: codeCollapsed ? undefined : 520, overflow: codeCollapsed ? undefined : 'auto' }}>

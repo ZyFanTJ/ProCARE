@@ -12,16 +12,16 @@
 %% in the "Academic Journal on Computing, Engineering and Applied Mathematics
 %% from Universidade Federal do Tocantins, Brazil,
 %% https://sistemas.uft.edu.br/periodicos/index.php/AJCEAM
-%% This file was originally written by Tiago Almeida
+%% This class file is provided with anonymized template metadata.
 %% First version: 2019-10-29
 %%
 %% History:
-%%           2019-10-29 - First version by Tiago Almeida <tiagoalmeida@uft.edu.br>
-%%           2020-03-17 - Second revision by Tiago Almeida <tiagoalmeida@uft.edu.br>
-%%           2020-04-09 - English revision by Caio Machado <caio.machado@uft.edu.br>
-%%           2022-09-13 - Third revision by Tiago Almeida <tiagoalmeida@uft.edu.br>
-%%           2023-05-03 - Fourth revision by Tiago Almeida <tiagoalmeida@uft.edu.br>
-%%           2023-09-01 - Fifth revision by Tiago Almeida <tiagoalmeida@uft.edu.br>
+%%           2019-10-29 - First version
+%%           2020-03-17 - Second revision
+%%           2020-04-09 - English revision
+%%           2022-09-13 - Third revision
+%%           2023-05-03 - Fourth revision
+%%           2023-09-01 - Fifth revision
 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{ajceam-class}[2023-09-01 AJCEAM paper class]

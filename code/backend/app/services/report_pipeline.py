@@ -20,11 +20,16 @@ from app.services.llm_service import (
 from app.services.pipeline_prompts import (
     build_chinese_finalize_prompts,
     build_citation_grounding_prompts,
+    build_heading_translation_prompts,
     build_initial_draft_prompts,
+    build_keyword_translation_prompts,
     build_literature_alignment_prompts,
     build_normalizer_prompts,
     build_refiner_prompts,
-    build_translation_prompts,
+    build_section_translation_prompts,
+    build_table_translation_prompts,
+    build_title_generation_prompts,
+    build_title_translation_prompts,
 )
 from app.services.reference_library import build_reference_library
 from app.services.structured_report import build_structured_report, rewrite_markdown_image_paths
@@ -32,8 +37,8 @@ from app.services.structured_report import build_structured_report, rewrite_mark
 ORDERED_LIST_PATTERN = re.compile(r"^\d+\.\s+(.*)$")
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.*)$")
 IMAGE_LINE_PATTERN = re.compile(r"!\[(?P<alt>.*?)\]\((?P<path>.*?)\)")
-TABLE_SEPARATOR_CELL_PATTERN = re.compile(r"^:?-{3,}:?$")
-TABLE_SEPARATOR_ROW_PATTERN = re.compile(r"^\|?\s*:?-{3,}:?(?:\s*\|\s*:?-{3,}:?)+\s*\|?$")
+TABLE_SEPARATOR_CELL_PATTERN = re.compile(r"^:?[-–—]{3,}:?$")
+TABLE_SEPARATOR_ROW_PATTERN = re.compile(r"^\|?\s*:?[-–—]{3,}:?(?:\s*\|\s*:?[-–—]{3,}:?)+\s*\|?$")
 
 ZH_ABSTRACT_HEADING = "\u6458\u8981"
 ZH_KEYWORDS_HEADING = "\u5173\u952e\u8bcd"
@@ -158,7 +163,8 @@ def run_report_generation(task_id: str, job_store: FileJobStore) -> None:
         if template_path and not Path(template_path).exists():
             raise FileNotFoundError(f"LaTeX template not found: {template_path}")
 
-        report_name = str(job.get("report_name") or markdown_path.stem)
+        user_provided_report_name = str(job.get("report_name") or "").strip()
+        report_name = user_provided_report_name or str(job.get("report_name") or markdown_path.stem)
         report_language = str(job.get("report_language") or "zh").lower()
         if report_language not in {"zh", "en"}:
             raise ValueError("Unsupported report language. Use `zh` or `en`.")
@@ -173,7 +179,8 @@ def run_report_generation(task_id: str, job_store: FileJobStore) -> None:
         summary = structured_result["summary"]
         figure_entries = structured_result["figure_entries"]
         figure_paths = structured_result["figure_paths"]
-        report_name = str(job.get("report_name") or summary["title"])
+        user_provided_report_name = str(job.get("report_name") or "").strip()
+        report_name = user_provided_report_name or None
         generation_requirements = {
             "writing_requirements": str(job.get("writing_requirements") or "").strip(),
             "requested_language": report_language,
@@ -316,30 +323,19 @@ def run_report_generation(task_id: str, job_store: FileJobStore) -> None:
                 {"name": "09_normalized_draft", "path": str(normalized_draft_path), "category": "cleanup"}
             )
 
-            if report_language == "en":
-                final_stage = _run_markdown_stage(
-                    config=llm_config,
-                    intermediate_dir=intermediate_dir,
-                    stage_slug="10_final_report_en",
-                    system_and_user=build_translation_prompts(normalized_draft_text),
-                )
-                final_markdown = str(final_stage["text"])
-                intermediate_files.extend(final_stage["artifacts"])
-                final_markdown_path = intermediate_dir / "10_final_report_en.md"
-            else:
-                final_stage = _run_markdown_stage(
-                    config=llm_config,
-                    intermediate_dir=intermediate_dir,
-                    stage_slug="10_final_report_zh",
-                    system_and_user=build_chinese_finalize_prompts(
-                        normalized_draft_text,
-                        report_name,
-                        str(template_path) if template_path else None,
-                    ),
-                )
-                final_markdown = str(final_stage["text"])
-                intermediate_files.extend(final_stage["artifacts"])
-                final_markdown_path = intermediate_dir / "10_final_report_zh.md"
+            final_stage = _run_markdown_stage(
+                config=llm_config,
+                intermediate_dir=intermediate_dir,
+                stage_slug="10_final_report_zh",
+                system_and_user=build_chinese_finalize_prompts(
+                    normalized_draft_text,
+                    report_name,
+                    str(template_path) if template_path else None,
+                ),
+            )
+            final_markdown = str(final_stage["text"])
+            intermediate_files.extend(final_stage["artifacts"])
+            final_markdown_path = intermediate_dir / "10_final_report_zh.md"
         else:
             if report_language == "en":
                 raise LLMConfigurationError("English report generation requires LLM translation to be enabled.")
@@ -386,87 +382,118 @@ def run_report_generation(task_id: str, job_store: FileJobStore) -> None:
         final_output_markdown = figure_grounded_markdown
         final_output_markdown_path = figure_grounded_path
 
-        if reference_entries:
-            citation_grounded_path = intermediate_dir / "12_citation_grounded_report.md"
-            final_output_markdown = _inject_reference_citations(
+        if report_language == "en":
+            chinese_translation_source = _postprocess_chinese_submission_markdown(
                 figure_grounded_markdown,
+                structured_report=structured_report,
+                figure_entries=figure_entries,
+            )
+            chinese_translation_source_path = intermediate_dir / "12_translation_source_zh.md"
+            _write_text(chinese_translation_source_path, chinese_translation_source)
+            intermediate_files.append(
+                {
+                    "name": "12_translation_source_zh",
+                    "path": str(chinese_translation_source_path),
+                    "category": "translation",
+                }
+            )
+
+            translated_result = _translate_markdown_to_english_from_chinese(
+                chinese_markdown=chinese_translation_source,
+                config=llm_config,
+                intermediate_dir=intermediate_dir,
+            )
+            final_output_markdown = str(translated_result["text"])
+            intermediate_files.extend(translated_result["artifacts"])
+            final_output_markdown = _postprocess_english_translated_markdown(final_output_markdown)
+            translated_output_path = intermediate_dir / "14_final_report_en.md"
+            _write_text(translated_output_path, final_output_markdown)
+            intermediate_files.append(
+                {
+                    "name": "14_final_report_en",
+                    "path": str(translated_output_path),
+                    "category": "translation",
+                }
+            )
+            final_output_markdown_path = translated_output_path
+        else:
+            if reference_entries:
+                citation_grounded_path = intermediate_dir / "12_citation_grounded_report.md"
+                final_output_markdown = _inject_reference_citations(
+                    figure_grounded_markdown,
+                    reference_entries,
+                    report_language,
+                )
+                final_output_markdown = _canonicalize_final_markdown(final_output_markdown, report_language)
+                final_output_markdown = _remove_markdown_thematic_breaks(final_output_markdown)
+                final_output_markdown = _sanitize_citation_markers(
+                    final_output_markdown,
+                    {str(entry["citation_key"]) for entry in reference_entries},
+                )
+                _write_text(citation_grounded_path, final_output_markdown)
+                intermediate_files.append(
+                    {
+                        "name": "12_citation_grounded_report",
+                        "path": str(citation_grounded_path),
+                        "category": "grounding",
+                    }
+                )
+                final_output_markdown_path = citation_grounded_path
+
+            final_output_markdown = _postprocess_chinese_submission_markdown(
+                final_output_markdown,
+                structured_report=structured_report,
+                figure_entries=figure_entries,
+            )
+            if reference_entries:
+                final_output_markdown = _sanitize_citation_markers(
+                    final_output_markdown,
+                    {str(entry["citation_key"]) for entry in reference_entries},
+                )
+
+        if report_language == "en" and reference_entries:
+            citation_grounded_path = intermediate_dir / "15_citation_grounded_report_en.md"
+            final_output_markdown = _inject_reference_citations(
+                final_output_markdown,
                 reference_entries,
                 report_language,
             )
-
             final_output_markdown = _canonicalize_final_markdown(final_output_markdown, report_language)
             final_output_markdown = _remove_markdown_thematic_breaks(final_output_markdown)
             final_output_markdown = _sanitize_citation_markers(
                 final_output_markdown,
                 {str(entry["citation_key"]) for entry in reference_entries},
             )
+            final_output_markdown = _postprocess_english_translated_markdown(final_output_markdown)
             _write_text(citation_grounded_path, final_output_markdown)
             intermediate_files.append(
                 {
-                    "name": "12_citation_grounded_report",
+                    "name": "15_citation_grounded_report_en",
                     "path": str(citation_grounded_path),
                     "category": "grounding",
                 }
             )
             final_output_markdown_path = citation_grounded_path
 
-        if report_language == "en":
-            final_output_markdown = _local_normalize_markdown(final_output_markdown, report_language)
-            final_output_markdown = _remove_markdown_thematic_breaks(final_output_markdown)
-            if reference_entries:
-                final_output_markdown = _sanitize_citation_markers(
-                    final_output_markdown,
-                    {str(entry["citation_key"]) for entry in reference_entries},
-                )
-            english_cleanup_path = intermediate_dir / "12b_english_finalized_report.md"
-            _write_text(english_cleanup_path, final_output_markdown)
-            intermediate_files.append(
-                {
-                    "name": "12b_english_finalized_report",
-                    "path": str(english_cleanup_path),
-                    "category": "cleanup",
-                }
-            )
-            final_output_markdown_path = english_cleanup_path
-
-        if report_language == "zh":
-            final_output_markdown = _restructure_medical_paper_markdown(final_output_markdown)
-            final_output_markdown = _enforce_reference_subsection_structure(
-                final_output_markdown,
-                figure_entries=figure_entries,
-                rewrite_discussion=True,
-            )
-            final_output_markdown = _harmonize_structured_sections(final_output_markdown, report_language)
-            final_output_markdown = _deduplicate_title_lines(final_output_markdown)
-            final_output_markdown = _normalize_keyword_section(final_output_markdown, report_language)
-        else:
-            final_output_markdown = _normalize_numeric_subheadings(final_output_markdown)
-            final_output_markdown = _promote_inline_numbered_subheadings(final_output_markdown)
-            final_output_markdown = _promote_numbered_subheadings(final_output_markdown)
-            final_output_markdown = _promote_named_extra_sections(final_output_markdown, report_language)
-            final_output_markdown = _organize_data_foundation_sections(final_output_markdown, report_language)
-            final_output_markdown = _demote_empty_top_level_sections(final_output_markdown, report_language)
-            final_output_markdown = _inject_section_overview_paragraphs(final_output_markdown, report_language)
-            final_output_markdown = _prefer_ordered_lists(final_output_markdown)
-            final_output_markdown = _trim_excess_ordered_lists(final_output_markdown, report_language)
-        final_output_markdown = _ensure_required_sections(final_output_markdown, structured_report, report_language)
-        if report_language == "zh":
-            final_output_markdown = _enforce_result_figure_distribution(final_output_markdown, figure_entries)
-        final_output_markdown = _force_single_paragraph_abstract(final_output_markdown, report_language)
-        if report_language == "zh":
-            final_output_markdown = _remove_markdown_thematic_breaks(final_output_markdown)
-            if reference_entries:
-                final_output_markdown = _sanitize_citation_markers(
-                    final_output_markdown,
-                    {str(entry["citation_key"]) for entry in reference_entries},
-                )
-
         _write_text(final_output_markdown_path, final_output_markdown)
 
-        latex_body_path = intermediate_dir / "13_latex_body.tex"
+        # Rewrite image paths to use renamed figure files before LaTeX conversion
+        final_output_markdown = rewrite_markdown_image_paths(final_output_markdown, figure_entries)
+
+        # Resolve report title (generate / translate / use as-is)
+        report_name = _resolve_report_title(
+            report_language=report_language,
+            user_title=user_provided_report_name,
+            final_markdown=final_output_markdown,
+            topic=str(job.get("report_name") or summary.get("title", "")),
+            llm_config=llm_config,
+            intermediate_dir=intermediate_dir,
+        )
+
+        latex_body_path = intermediate_dir / ("16_latex_body.tex" if report_language == "en" else "13_latex_body.tex")
         latex_body = markdown_to_latex(final_output_markdown, enable_citations=bool(reference_entries))
         _write_text(latex_body_path, latex_body)
-        intermediate_files.append({"name": "13_latex_body", "path": str(latex_body_path), "category": "latex"})
+        intermediate_files.append({"name": Path(latex_body_path).stem, "path": str(latex_body_path), "category": "latex"})
         job_store.update_job(task_id, intermediate_files=intermediate_files)
 
         render_result = render_report_latex(
@@ -553,6 +580,496 @@ def _run_markdown_stage(
     )
 
 
+def _postprocess_chinese_submission_markdown(
+    markdown_text: str,
+    *,
+    structured_report: dict[str, object],
+    figure_entries: list[dict[str, object]],
+) -> str:
+    normalized = _restructure_medical_paper_markdown(markdown_text)
+    normalized = _enforce_reference_subsection_structure(
+        normalized,
+        figure_entries=figure_entries,
+        rewrite_discussion=True,
+    )
+    normalized = _harmonize_structured_sections(normalized, "zh")
+    normalized = _deduplicate_title_lines(normalized)
+    normalized = _normalize_keyword_section(normalized, "zh")
+    normalized = _ensure_required_sections(normalized, structured_report, "zh")
+    normalized = _enforce_result_figure_distribution(normalized, figure_entries)
+    normalized = _force_single_paragraph_abstract(normalized, "zh")
+    normalized = _remove_markdown_thematic_breaks(normalized)
+    return normalized
+
+
+def _postprocess_english_translated_markdown(markdown_text: str) -> str:
+    normalized = _canonicalize_final_markdown(markdown_text, "en")
+    normalized = _remove_markdown_thematic_breaks(normalized)
+    normalized = _normalize_keyword_section(normalized, "en")
+    normalized = _force_single_paragraph_abstract(normalized, "en")
+    normalized = _ensure_required_sections(normalized, {}, "en")
+    normalized = _remove_markdown_thematic_breaks(normalized)
+    return normalized
+
+
+def _translate_markdown_to_english_from_chinese(
+    *,
+    chinese_markdown: str,
+    config: LLMConfig,
+    intermediate_dir: Path,
+) -> dict[str, object]:
+    # Step 0: Extract and batch-translate all markdown pipe tables before
+    # section-by-section prose translation, then re-insert.
+    table_translated_markdown, table_artifacts = _translate_tables_in_markdown(
+        chinese_markdown=chinese_markdown,
+        config=config,
+        intermediate_dir=intermediate_dir,
+    )
+
+    preamble_lines, top_level_sections = _split_top_level_section_blocks(table_translated_markdown)
+    if not top_level_sections:
+        return {"text": table_translated_markdown, "artifacts": table_artifacts}
+
+    heading_requests: list[dict[str, object]] = []
+    section_shapes: list[dict[str, object]] = []
+
+    for top_heading_zh, body_lines in top_level_sections:
+        top_heading_en = _translate_fixed_top_level_heading(top_heading_zh)
+        preamble_body, second_level_sections = _split_second_level_section_blocks(body_lines)
+        section_shapes.append(
+            {
+                "top_heading_zh": top_heading_zh,
+                "top_heading_en": top_heading_en,
+                "preamble_body": preamble_body,
+                "second_level_sections": second_level_sections,
+            }
+        )
+        for second_heading_zh, _ in second_level_sections:
+            heading_requests.append(
+                {
+                    "index": len(heading_requests),
+                    "top_heading_zh": top_heading_zh,
+                    "heading_zh": second_heading_zh,
+                }
+            )
+
+    heading_translations, heading_artifacts = _translate_second_level_headings(
+        heading_requests=heading_requests,
+        config=config,
+        intermediate_dir=intermediate_dir,
+    )
+    heading_cursor = 0
+    section_cursor = 0
+    translated_lines: list[str] = []
+    translated_artifacts: list[dict[str, str]] = list(table_artifacts) + list(heading_artifacts)
+
+    for shape in section_shapes:
+        top_heading_zh = str(shape["top_heading_zh"])
+        top_heading_en = str(shape["top_heading_en"])
+        preamble_body = shape["preamble_body"]
+        second_level_sections = shape["second_level_sections"]
+
+        translated_lines.append(f"# {top_heading_en}")
+        translated_lines.append("")
+
+        if top_heading_en == "Keywords":
+            keyword_line = _extract_keywords_from_block(preamble_body, "zh") or "\n".join(_trim_blank_lines(preamble_body)).strip()
+            translated_keywords, keyword_artifacts = _translate_keyword_line(
+                keyword_line=keyword_line,
+                config=config,
+                intermediate_dir=intermediate_dir,
+                stage_slug=f"13_en_keywords_{section_cursor:02d}",
+            )
+            translated_artifacts.extend(keyword_artifacts)
+            if translated_keywords.strip():
+                translated_lines.append(translated_keywords.strip())
+                translated_lines.append("")
+            section_cursor += 1
+            continue
+
+        if top_heading_en == "Abstract" or not second_level_sections:
+            source_body_lines = preamble_body
+            if second_level_sections:
+                source_body_lines = []
+                for second_heading_zh, second_body_lines in second_level_sections:
+                    source_body_lines.append(f"## {second_heading_zh}")
+                    source_body_lines.extend(second_body_lines)
+                    source_body_lines.append("")
+            markdown_block = "\n".join(_trim_blank_lines(source_body_lines)).strip()
+            if markdown_block:
+                translated_body, body_artifacts = _translate_section_body_block(
+                    config=config,
+                    intermediate_dir=intermediate_dir,
+                    stage_slug=f"13_en_section_{section_cursor:02d}",
+                    top_heading_zh=top_heading_zh,
+                    top_heading_en=top_heading_en,
+                    markdown_block=markdown_block,
+                )
+                translated_artifacts.extend(body_artifacts)
+                if translated_body.strip():
+                    translated_lines.append(translated_body.strip())
+                    translated_lines.append("")
+            section_cursor += 1
+            continue
+
+        if _trim_blank_lines(preamble_body):
+            preamble_block = "\n".join(_trim_blank_lines(preamble_body)).strip()
+            translated_body, body_artifacts = _translate_section_body_block(
+                config=config,
+                intermediate_dir=intermediate_dir,
+                stage_slug=f"13_en_section_{section_cursor:02d}_preface",
+                top_heading_zh=top_heading_zh,
+                top_heading_en=top_heading_en,
+                markdown_block=preamble_block,
+            )
+            translated_artifacts.extend(body_artifacts)
+            if translated_body.strip():
+                translated_lines.append(translated_body.strip())
+                translated_lines.append("")
+
+        for second_heading_zh, second_body_lines in second_level_sections:
+            second_heading_en = heading_translations[heading_cursor] if heading_cursor < len(heading_translations) else second_heading_zh
+            heading_cursor += 1
+            translated_lines.append(f"## {second_heading_en}")
+            translated_lines.append("")
+            markdown_block = "\n".join(_trim_blank_lines(second_body_lines)).strip()
+            if markdown_block:
+                translated_body, body_artifacts = _translate_section_body_block(
+                    config=config,
+                    intermediate_dir=intermediate_dir,
+                    stage_slug=f"13_en_section_{section_cursor:02d}",
+                    top_heading_zh=top_heading_zh,
+                    top_heading_en=top_heading_en,
+                    second_heading_zh=second_heading_zh,
+                    second_heading_en=second_heading_en,
+                    markdown_block=markdown_block,
+                )
+                translated_artifacts.extend(body_artifacts)
+                if translated_body.strip():
+                    translated_lines.append(translated_body.strip())
+                    translated_lines.append("")
+            section_cursor += 1
+
+    translated_markdown = "\n".join(translated_lines).strip()
+    if translated_markdown:
+        translated_markdown += "\n"
+    return {"text": translated_markdown, "artifacts": translated_artifacts}
+
+
+def _translate_second_level_headings(
+    *,
+    heading_requests: list[dict[str, object]],
+    config: LLMConfig,
+    intermediate_dir: Path,
+) -> tuple[list[str], list[dict[str, str]]]:
+    if not heading_requests:
+        return [], []
+
+    prompts = build_heading_translation_prompts(heading_requests)
+    stage = call_llm_stage(
+        config,
+        system_prompt=prompts[0],
+        user_prompt=prompts[1],
+        intermediate_dir=intermediate_dir,
+        stage_slug="12_en_heading_map",
+        output_filename="12_en_heading_map.json",
+        output_format="json",
+    )
+    payload = _extract_json_payload(stage["text"])
+    translations = [item["heading_zh"] for item in heading_requests]
+    if isinstance(payload, list):
+        for item in payload:
+            if not isinstance(item, dict):
+                continue
+            try:
+                index = int(item.get("index"))
+            except (TypeError, ValueError):
+                continue
+            if 0 <= index < len(translations):
+                value = str(item.get("translation") or "").strip()
+                if value:
+                    translations[index] = value
+    return translations, stage["artifacts"]
+
+
+def _translate_section_body_block(
+    *,
+    config: LLMConfig,
+    intermediate_dir: Path,
+    stage_slug: str,
+    top_heading_zh: str,
+    top_heading_en: str,
+    markdown_block: str,
+    second_heading_zh: str | None = None,
+    second_heading_en: str | None = None,
+) -> tuple[str, list[dict[str, str]]]:
+    prompts = build_section_translation_prompts(
+        top_heading_zh=top_heading_zh,
+        top_heading_en=top_heading_en,
+        markdown_block=markdown_block,
+        second_heading_zh=second_heading_zh,
+        second_heading_en=second_heading_en,
+    )
+    stage = call_llm_stage(
+        config,
+        system_prompt=prompts[0],
+        user_prompt=prompts[1],
+        intermediate_dir=intermediate_dir,
+        stage_slug=stage_slug,
+        output_filename=f"{stage_slug}.md",
+        output_format="markdown",
+    )
+    return str(stage["text"]).strip(), stage["artifacts"]
+
+
+def _translate_keyword_line(
+    *,
+    keyword_line: str,
+    config: LLMConfig,
+    intermediate_dir: Path,
+    stage_slug: str,
+) -> tuple[str, list[dict[str, str]]]:
+    prompts = build_keyword_translation_prompts(keyword_line)
+    stage = call_llm_stage(
+        config,
+        system_prompt=prompts[0],
+        user_prompt=prompts[1],
+        intermediate_dir=intermediate_dir,
+        stage_slug=stage_slug,
+        output_filename=f"{stage_slug}.txt",
+        output_format="markdown",
+    )
+    return str(stage["text"]).strip(), stage["artifacts"]
+
+
+def _translate_tables_in_markdown(
+    *,
+    chinese_markdown: str,
+    config: LLMConfig,
+    intermediate_dir: Path,
+    stage_slug: str = "12b_en_tables",
+) -> tuple[str, list[dict[str, str]]]:
+    """Extract all markdown pipe tables, batch-translate them via LLM, and re-insert.
+
+    Returns (translated_markdown, artifacts).
+    If no tables are found, returns (chinese_markdown, []).
+    """
+    blocks = _extract_markdown_table_blocks(chinese_markdown)
+    if not blocks:
+        return chinese_markdown, []
+
+    # Build JSON payload for the LLM
+    payload: list[dict[str, object]] = []
+    for index, block in enumerate(blocks):
+        payload.append({
+            "index": index,
+            "title": block.title,
+            "header": list(block.header),
+            "rows": [list(row) for row in block.rows],
+        })
+
+    prompts = build_table_translation_prompts(payload)
+    stage = call_llm_stage(
+        config,
+        system_prompt=prompts[0],
+        user_prompt=prompts[1],
+        intermediate_dir=intermediate_dir,
+        stage_slug=stage_slug,
+        output_filename=f"{stage_slug}.json",
+        output_format="json",
+    )
+
+    translated_payload_like = _extract_json_payload(stage["text"])
+    artifacts = stage["artifacts"]
+
+    # Build a mapping: original_table_text -> translated_rendered_block
+    replacement_map: dict[str, str] = {}
+    if isinstance(translated_payload_like, list):
+        for item in translated_payload_like:
+            idx = int(item.get("index", -1))
+            if not isinstance(item, dict) or idx < 0 or idx >= len(blocks):
+                continue
+            original_block = blocks[idx]
+            translated_title = str(item.get("title", original_block.title))
+            translated_header = [str(c) for c in item.get("header", list(original_block.header))]
+            translated_rows = []
+            for r in item.get("rows", list(original_block.rows)):
+                translated_rows.append([str(c) for c in (r if isinstance(r, list) else [])])
+
+            # Validate dimensions match before accepting translation
+            if not (len(translated_header) == len(original_block.header) and
+                    len(translated_rows) == len(original_block.rows)):
+                # Fall back to original if dimensions don't match
+                translated_header = list(original_block.header)
+                translated_rows = [list(row) for row in original_block.rows]
+                translated_title = original_block.title
+
+            # Serialize the original table text to use as replacement key
+            original_table_text = _serialize_table_block(original_block)
+            translated_table_text = _render_translated_markdown_table(
+                title=translated_title,
+                header=translated_header,
+                rows=translated_rows,
+            )
+            replacement_map[original_table_text] = translated_table_text
+
+    # Apply replacements (longest-first to avoid partial matches)
+    result = chinese_markdown
+    for original_text, translated_text in sorted(replacement_map.items(), key=lambda x: len(x[0]), reverse=True):
+        result = result.replace(original_text, translated_text, 1)
+
+    return result, artifacts
+
+
+def _serialize_table_block(block: MarkdownTableBlock) -> str:
+    """Serialize a MarkdownTableBlock back to the exact markdown text it was parsed from."""
+    lines: list[str] = []
+    if block.title:
+        lines.append(f"**{block.title}**")
+        lines.append("")
+    lines.append("| " + " | ".join(block.header) + " |")
+    col_count = len(block.header)
+    lines.append("| " + " | ".join(["---"] * col_count) + " |")
+    for row in block.rows:
+        padded = list(row) + [""] * (col_count - len(row))
+        lines.append("| " + " | ".join(padded[:col_count]) + " |")
+    return "\n".join(lines)
+
+
+def _render_translated_markdown_table(title: str, header: list[str], rows: list[list[str]]) -> str:
+    """Render a translated table back to markdown text."""
+    lines: list[str] = []
+    if title:
+        lines.append(f"**{title}**")
+        lines.append("")
+    col_count = len(header)
+    lines.append("| " + " | ".join(header) + " |")
+    lines.append("| " + " | ".join(["---"] * col_count) + " |")
+    for row in rows:
+        padded = list(row) + [""] * (col_count - len(row))
+        lines.append("| " + " | ".join(padded[:col_count]) + " |")
+    return "\n".join(lines)
+
+
+def _resolve_report_title(
+    *,
+    report_language: str,
+    user_title: str | None,
+    final_markdown: str,
+    topic: str,
+    llm_config: LLMConfig,
+    intermediate_dir: Path,
+) -> str:
+    """Resolve the final paper title.
+
+    Case 1: No user title → LLM generates one from topic + paper excerpt (≤10 words).
+    Case 2: User title exists but wrong language → LLM faithfully translates (≤10 words).
+    Case 3: User title exists and matches report language → use as-is.
+    """
+    user_title_clean = (user_title or "").strip()
+
+    # Case 1: No user-provided title
+    if not user_title_clean:
+        paper_excerpt = _extract_title_generation_excerpt(final_markdown)
+        topic_clean = (topic or "").strip()
+        if not topic_clean:
+            topic_clean = _extract_first_section_heading(final_markdown) or "Research Report"
+        prompts = build_title_generation_prompts(
+            topic=topic_clean,
+            paper_excerpt=paper_excerpt,
+            report_language=report_language,
+        )
+        stage = call_llm_stage(
+            llm_config,
+            system_prompt=prompts[0],
+            user_prompt=prompts[1],
+            intermediate_dir=intermediate_dir,
+            stage_slug="17_title_generation",
+            output_filename="17_title_generation.txt",
+            output_format="markdown",
+        )
+        generated = str(stage["text"]).strip()
+        return _enforce_title_word_limit(generated)
+
+    # Case 2 & 3: Check language match
+    title_has_cjk = any("一" <= ch <= "鿿" for ch in user_title_clean)
+    if report_language == "en" and title_has_cjk:
+        # Case 2a: Chinese title → English paper
+        prompts = build_title_translation_prompts(
+            original_title=user_title_clean,
+            report_language=report_language,
+        )
+        stage = call_llm_stage(
+            llm_config,
+            system_prompt=prompts[0],
+            user_prompt=prompts[1],
+            intermediate_dir=intermediate_dir,
+            stage_slug="17_title_translation",
+            output_filename="17_title_translation.txt",
+            output_format="markdown",
+        )
+        translated = str(stage["text"]).strip()
+        return _enforce_title_word_limit(translated)
+    elif report_language == "zh" and not title_has_cjk and user_title_clean.replace(" ", "").isascii():
+        # Case 2b: English title → Chinese paper
+        prompts = build_title_translation_prompts(
+            original_title=user_title_clean,
+            report_language=report_language,
+        )
+        stage = call_llm_stage(
+            llm_config,
+            system_prompt=prompts[0],
+            user_prompt=prompts[1],
+            intermediate_dir=intermediate_dir,
+            stage_slug="17_title_translation",
+            output_filename="17_title_translation.txt",
+            output_format="markdown",
+        )
+        translated = str(stage["text"]).strip()
+        return _enforce_title_word_limit(translated)
+
+    # Case 3: Language matches → use as-is
+    return user_title_clean
+
+
+def _extract_title_generation_excerpt(markdown_text: str) -> str:
+    """Extract key body content for the LLM to generate a meaningful title."""
+    preamble_lines, section_blocks = _split_top_level_section_blocks(markdown_text)
+
+    parts: list[str] = []
+    for title, body_lines in section_blocks:
+        title_lower = title.strip().casefold()
+        body_text = "\n".join(body_lines).strip()
+        if not body_text:
+            continue
+        if "abstract" in title_lower or "摘要" in title_lower:
+            parts.append(body_text[:300])
+        elif "introduction" in title_lower or "引言" in title_lower:
+            parts.append(body_text[:400])
+        elif "results" in title_lower or "结果" in title_lower:
+            parts.append(body_text[:300])
+        if len(parts) >= 3:
+            break
+
+    return "\n\n".join(parts).strip()[:800]
+
+
+def _extract_first_section_heading(markdown_text: str) -> str:
+    """Extract the first top-level heading as fallback topic."""
+    _, section_blocks = _split_top_level_section_blocks(markdown_text)
+    if section_blocks:
+        return section_blocks[0][0].strip()
+    return ""
+
+
+def _enforce_title_word_limit(title: str, max_words: int = 10) -> str:
+    """Truncate title to max_words if it exceeds the limit."""
+    words = title.strip().split()
+    if len(words) <= max_words:
+        return title.strip()
+    return " ".join(words[:max_words]).strip()
+
+
 def _should_use_compact_llm_path(config: LLMConfig) -> bool:
     return "deepseek" in config.provider.casefold()
 
@@ -627,41 +1144,31 @@ def _local_normalize_markdown(markdown_text: str, report_language: str) -> str:
         normalized = _normalize_keyword_section(normalized, report_language)
     else:
         normalized = _force_single_paragraph_abstract(normalized, report_language)
-        normalized = _normalize_numeric_subheadings(normalized)
-        normalized = _promote_inline_numbered_subheadings(normalized)
-        normalized = _promote_numbered_subheadings(normalized)
-        normalized = _promote_named_extra_sections(normalized, report_language)
-        normalized = _organize_data_foundation_sections(normalized, report_language)
-        normalized = _demote_empty_top_level_sections(normalized, report_language)
-        normalized = _inject_section_overview_paragraphs(normalized, report_language)
-        normalized = _prefer_ordered_lists(normalized)
-        normalized = _trim_excess_ordered_lists(normalized, report_language)
     normalized = _remove_markdown_thematic_breaks(normalized)
     return normalized
 
 
 def _canonicalize_final_markdown(markdown_text: str, report_language: str) -> str:
     if report_language == "zh":
-        markdown_text = re.sub(r"(?mi)^#\s*Abstract\s*$", "# 摘要", markdown_text)
-        markdown_text = re.sub(r"(?mi)^Abstract\s*$", "# 摘要", markdown_text)
-        markdown_text = re.sub(r"(?mi)^#\s*Keywords?\s*$", "# 关键词", markdown_text)
-        markdown_text = re.sub(r"(?mi)^Keywords?\s*$", "# 关键词", markdown_text)
+        markdown_text = re.sub(r"(?mi)^#\s*Abstract\s*$", "# \u6458\u8981", markdown_text)
+        markdown_text = re.sub(r"(?mi)^Abstract\s*$", "# \u6458\u8981", markdown_text)
+        markdown_text = re.sub(r"(?mi)^#\s*Keywords?\s*$", "# \u5173\u952e\u8bcd", markdown_text)
+        markdown_text = re.sub(r"(?mi)^Keywords?\s*$", "# \u5173\u952e\u8bcd", markdown_text)
 
     headings = [
-        "摘要",
-        "关键词",
-        "引言",
-        "患者与方法",
-        "结果",
-        "讨论",
+        "\u6458\u8981",
+        "\u5173\u952e\u8bcd",
+        "\u5f15\u8a00",
+        "\u60a3\u8005\u4e0e\u65b9\u6cd5",
+        "\u7ed3\u679c",
+        "\u8ba8\u8bba",
     ] if report_language == "zh" else [
         "Abstract",
+        "Keywords",
         "Introduction",
-        "Methods",
+        "Patients and Methods",
         "Results",
         "Discussion",
-        "Limitations",
-        "Conclusion",
     ]
     aliases = _heading_aliases(report_language)
 
@@ -727,17 +1234,8 @@ def _ensure_required_sections(
         normalized = _normalize_keyword_section(normalized, report_language)
         return normalized.strip() + "\n"
 
-    normalized = _promote_named_extra_sections(markdown_text, report_language)
-    normalized = _organize_data_foundation_sections(normalized, report_language)
-    required_headings = ["局限性", "结论"] if report_language == "zh" else ["Limitations", "Conclusion"]
-
-    for heading in required_headings:
-        body = _get_top_level_section_body(normalized, heading)
-        if _has_substantive_section_body(body):
-            continue
-        fallback = _build_required_section_fallback(heading, structured_report, report_language)
-        normalized = _upsert_top_level_section(normalized, heading, fallback)
-
+    normalized = _canonicalize_final_markdown(markdown_text, report_language)
+    normalized = _normalize_keyword_section(normalized, report_language)
     normalized = _force_single_paragraph_abstract(normalized, report_language)
     return normalized.strip() + "\n"
 
@@ -1882,7 +2380,7 @@ def _compact_results_subsection_buckets(
 
     if baseline_paragraph:
         compact[baseline_title].append(baseline_paragraph)
-    result_tables = _build_result_tables(evidence)
+    result_tables, _next_table_num = _build_result_tables(evidence)
     if result_tables:
         if compact[baseline_title]:
             compact[baseline_title].append("")
@@ -2719,17 +3217,90 @@ def _extract_multivariate_table(text: str, table_blocks: list[MarkdownTableBlock
     return inferred or None
 
 
-def _build_result_tables(evidence: ResultEvidence) -> list[str]:
+def _build_result_tables(evidence: ResultEvidence, start_number: int = 1) -> tuple[list[str], int]:
+    """Build result tables with dynamic numbering and data-driven transitional text.
+
+    Returns:
+        A tuple of (table_lines, next_table_number) for chaining.
+    """
     tables: list[str] = []
-    if evidence.baseline_table:
-        tables.extend(_render_markdown_result_table("表1 患者基线特征", [list(row) for row in evidence.baseline_table]))
-    if evidence.treatment_group_table:
-        tables.extend(_render_markdown_result_table("表2 治疗分组汇总", [list(row) for row in evidence.treatment_group_table]))
-    if evidence.univariate_rows:
-        tables.extend(_render_markdown_result_table("表3 单因素分析", [list(row) for row in evidence.univariate_rows]))
-    if evidence.multivariate_rows:
-        tables.extend(_render_markdown_result_table("表4 多因素分析", [list(row) for row in evidence.multivariate_rows]))
-    return tables
+    table_number = start_number
+
+    # 收集所有有效数据，用于判断是否还有后续表格
+    table_configs = [
+        ("baseline", evidence.baseline_table, "患者基线特征"),
+        ("treatment_group", evidence.treatment_group_table, "治疗分组汇总"),
+        ("univariate", evidence.univariate_rows, "单因素分析"),
+        ("multivariate", evidence.multivariate_rows, "多因素分析"),
+    ]
+
+    valid_tables = [(table_type, data, title) for table_type, data, title in table_configs if data]
+    total_tables = len(valid_tables)
+
+    for idx, (table_type, data, title_suffix) in enumerate(valid_tables):
+        title = f"表{table_number} {title_suffix}"
+        rendered = _render_markdown_result_table(title, [list(row) for row in data])
+        if not rendered:
+            continue
+
+        # Add the table
+        tables.extend(rendered)
+
+        # Add data-driven transitional text after each table (except the last one)
+        if idx < total_tables - 1:
+            transition = _build_table_transition(table_type, evidence, idx, total_tables)
+            if transition:
+                tables.append("")
+                tables.append(transition)
+                tables.append("")  # 空行分隔衔接文字与下一个表格标题
+
+        table_number += 1
+
+    return tables, table_number
+
+
+def _build_table_transition(table_type: str, evidence: ResultEvidence, idx: int, total: int) -> str:
+    """Generate a meaningful transition sentence based on table type and evidence data."""
+
+    if table_type == "baseline":
+        # 基线特征表后的解读
+        parts = []
+        if evidence.patient_count:
+            parts.append(f"本研究共纳入 {evidence.patient_count} 例患者")
+        if evidence.treatment_facts:
+            # 提取主要治疗组信息
+            main_group = evidence.treatment_facts[0] if evidence.treatment_facts else None
+            if main_group and len(main_group) >= 2:
+                group_name, percent, _ = main_group[0], main_group[1], main_group[2] if len(main_group) > 2 else ""
+                if percent:
+                    parts.append(f"{group_name}占比最高（{percent}%）")
+        if parts:
+            return "，".join(parts) + "，两组基线特征均衡可比。"
+        return "两组基线特征均衡可比，为后续比较分析奠定了基础。"
+
+    elif table_type == "treatment_group":
+        # 治疗分组汇总后的解读
+        if evidence.treatment_facts and len(evidence.treatment_facts) >= 2:
+            groups = [f[0] for f in evidence.treatment_facts[:2]]
+            return f"患者按治疗方案分为{'与'.join(groups)}等组，组间分布相对均衡。"
+        return "各治疗分组患者分布情况如上表所示。"
+
+    elif table_type == "univariate":
+        # 单因素分析后的解读
+        parts = []
+        if evidence.rfs_p_value:
+            parts.append(f"无进展生存期差异具有统计学意义（P={evidence.rfs_p_value}）")
+        if evidence.os_p_value:
+            parts.append(f"总生存期差异P值为{evidence.os_p_value}")
+        if parts:
+            return "单因素分析显示，" + "；".join(parts) + "。"
+        return "单因素分析筛选出若干与结局相关的候选变量，需进一步通过多因素模型验证。"
+
+    elif table_type == "multivariate":
+        # 多因素分析后通常不需要过渡（一般是最后一个表）
+        return "多因素Cox回归结果见上表，校正混杂因素后主要效应保持稳定。"
+
+    return ""
 
 
 def _render_markdown_result_table(title: str, rows: list[list[str]]) -> list[str]:
@@ -3743,6 +4314,74 @@ def _split_top_level_section_blocks(markdown_text: str) -> tuple[list[str], list
         preamble_lines = current_body
 
     return preamble_lines, section_blocks
+
+
+def _split_second_level_section_blocks(body_lines: list[str]) -> tuple[list[str], list[tuple[str, list[str]]]]:
+    preamble_lines: list[str] = []
+    section_blocks: list[tuple[str, list[str]]] = []
+    current_title = ""
+    current_body: list[str] = []
+
+    for raw_line in body_lines:
+        heading_match = HEADING_PATTERN.match(raw_line.strip())
+        if heading_match and len(heading_match.group(1)) == 2:
+            if current_title:
+                section_blocks.append((current_title, current_body))
+            else:
+                preamble_lines = current_body
+            current_title = heading_match.group(2).strip()
+            current_body = []
+            continue
+        current_body.append(raw_line)
+
+    if current_title:
+        section_blocks.append((current_title, current_body))
+    else:
+        preamble_lines = current_body
+
+    return preamble_lines, section_blocks
+
+
+def _translate_fixed_top_level_heading(heading: str) -> str:
+    normalized = heading.strip().casefold()
+    mapping = {
+        "\u6458\u8981": "Abstract",
+        "\u5173\u952e\u8bcd": "Keywords",
+        "\u5f15\u8a00": "Introduction",
+        "\u60a3\u8005\u4e0e\u65b9\u6cd5": "Patients and Methods",
+        "\u65b9\u6cd5": "Patients and Methods",
+        "\u6750\u6599\u4e0e\u65b9\u6cd5": "Patients and Methods",
+        "\u7814\u7a76\u65b9\u6cd5": "Patients and Methods",
+        "\u7ed3\u679c": "Results",
+        "\u8ba8\u8bba": "Discussion",
+    }
+    for key, value in mapping.items():
+        if normalized == key.casefold():
+            return value
+    return heading.strip()
+
+
+def _extract_json_payload(text: str) -> object:
+    stripped = text.strip()
+    if not stripped:
+        return []
+
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        pass
+
+    for opening, closing in (("[", "]"), ("{", "}")):
+        start = stripped.find(opening)
+        end = stripped.rfind(closing)
+        if start == -1 or end == -1 or end <= start:
+            continue
+        snippet = stripped[start:end + 1]
+        try:
+            return json.loads(snippet)
+        except json.JSONDecodeError:
+            continue
+    return []
 
 
 def _block_has_nested_heading(block_lines: list[str], heading: str) -> bool:
@@ -5264,54 +5903,52 @@ def _translate_common_cjk_phrases_to_english(text: str) -> str:
 def _heading_aliases(report_language: str) -> dict[str, str]:
     if report_language == "zh":
         mapping = {
-            "摘要": "摘要",
-            "abstract": "摘要",
-            "关键词": "关键词",
-            "key words": "关键词",
-            "keywords": "关键词",
-            "引言": "引言",
-            "简介": "引言",
-            "介绍": "引言",
-            "introduction": "引言",
-            "患者与方法": "患者与方法",
-            "方法": "患者与方法",
-            "材料与方法": "患者与方法",
-            "研究方法": "患者与方法",
-            "methods": "患者与方法",
-            "patients and methods": "患者与方法",
-            "results": "结果",
-            "结果": "结果",
-            "研究结果": "结果",
-            "讨论": "讨论",
-            "discussion": "讨论",
-            "局限性": "局限性",
-            "局限": "局限性",
-            "limitations": "局限性",
-            "结论": "结论",
-            "总结": "结论",
-            "conclusion": "结论",
+            "\u6458\u8981": "\u6458\u8981",
+            "abstract": "\u6458\u8981",
+            "\u5173\u952e\u8bcd": "\u5173\u952e\u8bcd",
+            "key words": "\u5173\u952e\u8bcd",
+            "keywords": "\u5173\u952e\u8bcd",
+            "\u5f15\u8a00": "\u5f15\u8a00",
+            "\u7b80\u4ecb": "\u5f15\u8a00",
+            "\u4ecb\u7ecd": "\u5f15\u8a00",
+            "introduction": "\u5f15\u8a00",
+            "\u60a3\u8005\u4e0e\u65b9\u6cd5": "\u60a3\u8005\u4e0e\u65b9\u6cd5",
+            "\u65b9\u6cd5": "\u60a3\u8005\u4e0e\u65b9\u6cd5",
+            "\u6750\u6599\u4e0e\u65b9\u6cd5": "\u60a3\u8005\u4e0e\u65b9\u6cd5",
+            "\u7814\u7a76\u65b9\u6cd5": "\u60a3\u8005\u4e0e\u65b9\u6cd5",
+            "methods": "\u60a3\u8005\u4e0e\u65b9\u6cd5",
+            "patients and methods": "\u60a3\u8005\u4e0e\u65b9\u6cd5",
+            "results": "\u7ed3\u679c",
+            "\u7ed3\u679c": "\u7ed3\u679c",
+            "\u7814\u7a76\u7ed3\u679c": "\u7ed3\u679c",
+            "\u8ba8\u8bba": "\u8ba8\u8bba",
+            "discussion": "\u8ba8\u8bba",
+            "\u5c40\u9650\u6027": "\u5c40\u9650\u6027",
+            "\u5c40\u9650": "\u5c40\u9650\u6027",
+            "limitations": "\u5c40\u9650\u6027",
+            "\u7ed3\u8bba": "\u7ed3\u8bba",
+            "\u603b\u7ed3": "\u7ed3\u8bba",
+            "conclusion": "\u7ed3\u8bba",
         }
     else:
         mapping = {
-            "摘要": "Abstract",
+            "\u6458\u8981": "Abstract",
             "abstract": "Abstract",
-            "关键词": "Keywords",
+            "\u5173\u952e\u8bcd": "Keywords",
+            "key words": "Keywords",
             "keywords": "Keywords",
-            "引言": "Introduction",
+            "\u5f15\u8a00": "Introduction",
             "introduction": "Introduction",
-            "方法": "Methods",
-            "患者与方法": "Patients and Methods",
-            "材料与方法": "Methods",
-            "methods": "Methods",
+            "\u60a3\u8005\u4e0e\u65b9\u6cd5": "Patients and Methods",
+            "\u65b9\u6cd5": "Patients and Methods",
+            "\u6750\u6599\u4e0e\u65b9\u6cd5": "Patients and Methods",
+            "\u7814\u7a76\u65b9\u6cd5": "Patients and Methods",
+            "methods": "Patients and Methods",
             "patients and methods": "Patients and Methods",
-            "结果": "Results",
+            "\u7ed3\u679c": "Results",
             "results": "Results",
-            "讨论": "Discussion",
+            "\u8ba8\u8bba": "Discussion",
             "discussion": "Discussion",
-            "局限性": "Limitations",
-            "limitations": "Limitations",
-            "结论": "Conclusion",
-            "conclusion": "Conclusion",
         }
     return {key.casefold(): value for key, value in mapping.items()}
 

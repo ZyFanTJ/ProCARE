@@ -1,8 +1,9 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Tabs, Typography, Space, Tag, Button, Image, message, Collapse, Table, Descriptions, Divider } from 'antd';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchStatus, fetchReportPreview, fetchJobPlan, fetchExcelInfo, fetchExecLogs, fetchAnalysisCode, executeJobAsync, streamRunCode } from '../api/research';
+import { resolveStaticUrl } from '../api/client';
 import JsonTree from '../components/JsonTree';
 import CodeViewer from '../components/CodeViewer';
 import PlanPreview from '../components/PlanPreview';
@@ -21,10 +22,6 @@ export default function ProjectDetail() {
     const [codeCollapsed, setCodeCollapsed] = useState(true);
     const [terminalLogs, setTerminalLogs] = useState([]);
     const [terminalStatus, setTerminalStatus] = useState('idle');
-    const staticPrefix = useMemo(() => {
-        const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-        return baseApi ? baseApi.replace(/\/api$/, '') : '';
-    }, []);
     useEffect(() => {
         if (!jobId)
             return;
@@ -171,7 +168,7 @@ export default function ProjectDetail() {
                     {
                         key: 'overview',
                         label: '概览',
-                        children: (_jsxs(Card, { bordered: false, children: [_jsxs(Space, { wrap: true, children: [_jsxs(Tag, { children: ["Job: ", jobId] }), _jsxs(Tag, { children: ["\u6B65\u9AA4: ", status?.current_step, "/", status?.max_iters] }), _jsxs(Tag, { children: ["\u56FE\u8868: ", plots.length] })] }), !!plots?.length && (_jsx("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 12 }, children: plots.map((p) => (_jsxs("div", { style: { border: '1px solid var(--border-color)', borderRadius: 8, padding: 12, background: 'var(--bg-component)' }, children: [_jsx("div", { style: { width: '100%', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-app)', borderRadius: 4, overflow: 'hidden' }, children: _jsx(Image, { src: `${staticPrefix}/static/jobs/${jobId}/plots/${p}`, alt: p, style: { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' } }) }), _jsx("div", { style: { fontSize: 13, marginTop: 8, fontWeight: 500, color: 'var(--text-primary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, title: p, children: p })] }, p))) }))] })),
+                        children: (_jsxs(Card, { bordered: false, children: [_jsxs(Space, { wrap: true, children: [_jsxs(Tag, { children: ["Job: ", jobId] }), _jsxs(Tag, { children: ["\u6B65\u9AA4: ", status?.current_step, "/", status?.max_iters] }), _jsxs(Tag, { children: ["\u56FE\u8868: ", plots.length] })] }), !!plots?.length && (_jsx("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 12 }, children: plots.map((p) => (_jsxs("div", { style: { border: '1px solid var(--border-color)', borderRadius: 8, padding: 12, background: 'var(--bg-component)' }, children: [_jsx("div", { style: { width: '100%', height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-app)', borderRadius: 4, overflow: 'hidden' }, children: _jsx(Image, { src: resolveStaticUrl(`/static/jobs/${jobId}/plots/${p}`), alt: p, style: { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' } }) }), _jsx("div", { style: { fontSize: 13, marginTop: 8, fontWeight: 500, color: 'var(--text-primary)', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, title: p, children: p })] }, p))) }))] })),
                     },
                     {
                         key: 'plan',
@@ -198,7 +195,7 @@ export default function ProjectDetail() {
                                                     const msg = e?.response?.data?.detail || '重新执行失败';
                                                     message.error(msg);
                                                 }
-                                            }, children: "\u91CD\u65B0\u6267\u884C" }), _jsx("a", { href: `${staticPrefix}/static/jobs/${jobId}/analysis.py`, target: "_blank", rel: "noreferrer", children: "\u5728\u65B0\u7A97\u53E3\u6253\u5F00" })] }), code ? (_jsx("div", { style: { maxHeight: codeCollapsed ? undefined : 520, overflow: codeCollapsed ? undefined : 'auto' }, children: _jsx(CodeViewer, { code: code, collapsed: codeCollapsed }) })) : (_jsx(Typography.Text, { type: "secondary", children: "\u672A\u627E\u5230\u5206\u6790\u4EE3\u7801" })), (terminalLogs.length > 0 || terminalStatus === 'streaming' || terminalStatus === 'connecting') && (_jsxs("div", { style: { marginTop: 16, background: '#1e1e1e', padding: 12, borderRadius: 8, color: '#d4d4d4', fontFamily: 'monospace', maxHeight: 300, overflow: 'auto' }, children: [_jsxs("div", { style: { marginBottom: 8, borderBottom: '1px solid #333', paddingBottom: 4, display: 'flex', justifyContent: 'space-between' }, children: [_jsx("span", { children: "\u7EC8\u7AEF\u8F93\u51FA" }), _jsx("span", { style: { fontSize: 12, opacity: 0.7 }, children: terminalStatus })] }), _jsx("pre", { style: { margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 12 }, children: terminalLogs.join('') })] }))] })),
+                                            }, children: "\u91CD\u65B0\u6267\u884C" }), _jsx("a", { href: resolveStaticUrl(`/static/jobs/${jobId}/analysis.py`), target: "_blank", rel: "noreferrer", children: "\u5728\u65B0\u7A97\u53E3\u6253\u5F00" })] }), code ? (_jsx("div", { style: { maxHeight: codeCollapsed ? undefined : 520, overflow: codeCollapsed ? undefined : 'auto' }, children: _jsx(CodeViewer, { code: code, collapsed: codeCollapsed }) })) : (_jsx(Typography.Text, { type: "secondary", children: "\u672A\u627E\u5230\u5206\u6790\u4EE3\u7801" })), (terminalLogs.length > 0 || terminalStatus === 'streaming' || terminalStatus === 'connecting') && (_jsxs("div", { style: { marginTop: 16, background: '#1e1e1e', padding: 12, borderRadius: 8, color: '#d4d4d4', fontFamily: 'monospace', maxHeight: 300, overflow: 'auto' }, children: [_jsxs("div", { style: { marginBottom: 8, borderBottom: '1px solid #333', paddingBottom: 4, display: 'flex', justifyContent: 'space-between' }, children: [_jsx("span", { children: "\u7EC8\u7AEF\u8F93\u51FA" }), _jsx("span", { style: { fontSize: 12, opacity: 0.7 }, children: terminalStatus })] }), _jsx("pre", { style: { margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 12 }, children: terminalLogs.join('') })] }))] })),
                     },
                     {
                         key: 'logs',

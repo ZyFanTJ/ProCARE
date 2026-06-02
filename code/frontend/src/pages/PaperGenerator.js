@@ -1,10 +1,11 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Input, InputNumber, Progress, Radio, Row, Space, Tag, Typography, Upload, message } from 'antd';
 import { FilePdfOutlined, FileTextOutlined, FolderOpenOutlined, ReloadOutlined, SaveOutlined, UploadOutlined } from '@ant-design/icons';
 import { fetchPaperStatus, generatePaper } from '../api/research';
 import { fetchSettingsFromBackend, loadSettings } from '../utils/systemSettings';
+import { resolveStaticUrl } from '../api/client';
 const { Title, Text } = Typography;
 export default function PaperGenerator() {
     const { jobId } = useParams();
@@ -14,15 +15,6 @@ export default function PaperGenerator() {
     const [fileList, setFileList] = useState([]);
     const [settings, setSettings] = useState(() => loadSettings());
     const activeModel = settings?.active_model || settings?.llm?.active_model || '未配置';
-    const staticPrefix = useMemo(() => {
-        const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-        return baseApi ? baseApi.replace(/\/api$/, '') : '';
-    }, []);
-    const resolveStaticUrl = (url) => {
-        if (!url)
-            return '';
-        return url.startsWith('/static/') ? `${staticPrefix}${url}` : url;
-    };
     const refreshStatus = async () => {
         if (!jobId)
             return;

@@ -14,23 +14,16 @@ FIXED_ZH_HEADINGS = [
 
 FIXED_EN_HEADINGS = [
     "Abstract",
+    "Keywords",
     "Introduction",
-    "Methods",
+    "Patients and Methods",
     "Results",
     "Discussion",
-    "Limitations",
-    "Conclusion",
 ]
 
 OPTIONAL_ZH_HEADINGS: list[str] = []
 
-OPTIONAL_EN_HEADINGS = [
-    "Data Foundation and Attachment Analysis",
-    "Data Structure and Key Fields",
-    "Attachment and Table Analysis",
-    "Case Interpretation",
-    "Outlook",
-]
+OPTIONAL_EN_HEADINGS: list[str] = []
 
 ZH_REFERENCE_METHODS_SUBHEADINGS = [
     "\u60a3\u8005",
@@ -372,57 +365,176 @@ def build_chinese_finalize_prompts(
     return system_prompt, user_prompt
 
 
-def build_translation_prompts(normalized_markdown: str) -> tuple[str, str]:
+def build_heading_translation_prompts(heading_items: list[dict[str, object]]) -> tuple[str, str]:
     system_prompt = compose_system_prompt(
-        "You are a faithful academic translator. "
-        "Translate the markdown into English academic prose without changing any fact, number, implication, or figure path. "
-        "Do not add new content. "
-        "Do not over-compress or summarize away substantive material from the source markdown. "
-        "The final manuscript must be fully in English. "
-        "Do not leave any Chinese sentence, Chinese punctuation, or untranslated fragment in the output. "
-        "The manuscript must include these core top-level headings and preserve their relative order: "
-        + ", ".join(FIXED_EN_HEADINGS)
-        + ". "
-        "Optional extra top-level sections are allowed when needed for substantial content blocks, especially "
-        + ", ".join(OPTIONAL_EN_HEADINGS)
-        + ". "
-        "If related non-core blocks can be combined more coherently, such as data-structure material plus attachment/table analysis, merge them into one standalone chapter with a clear English title rather than placing them under unrelated core chapters. "
-        "Preserve local ordered structure only where the source clearly reads as a compact grouped list. "
-        "Do not overuse numbering in the English version. "
-        "The `Limitations` and `Conclusion` sections must both contain substantive paragraphs. "
-        "Do not introduce references to tables or sections that are not actually present in the manuscript. "
-        "Return markdown only.",
+        "You are a faithful academic heading translator. "
+        "Translate Chinese second-level manuscript headings into concise English academic headings. "
+        "Do not merge headings, do not split headings, do not add numbering, and do not add explanatory wording. "
+        "Preserve the original order exactly. "
+        "Return JSON only as an array of objects, each object containing `index` and `translation`.",
         profile_name="faithful-academic-translator",
     )
     user_prompt = (
-        "Translate the following normalized markdown into English.\n"
-        "----- BEGIN MARKDOWN -----\n"
-        f"{normalized_markdown}\n"
-        "----- END MARKDOWN -----\n\n"
-        "Output only the translated markdown."
+        "Translate the following Chinese second-level headings into English.\n"
+        "Return JSON only.\n"
+        "----- BEGIN HEADINGS -----\n"
+        f"{json.dumps(heading_items, ensure_ascii=False, indent=2)}\n"
+        "----- END HEADINGS -----\n\n"
+        "Output format example:\n"
+        '[{"index": 0, "translation": "Baseline Characteristics"}]'
     )
     return system_prompt, user_prompt
 
 
-def build_english_cleanup_prompts(markdown_text: str) -> tuple[str, str]:
+def build_section_translation_prompts(
+    *,
+    top_heading_zh: str,
+    top_heading_en: str,
+    markdown_block: str,
+    second_heading_zh: str | None = None,
+    second_heading_en: str | None = None,
+) -> tuple[str, str]:
+    heading_context = f"Top-level section: {top_heading_zh} -> {top_heading_en}."
+    if second_heading_zh and second_heading_en:
+        heading_context += f" Second-level subsection: {second_heading_zh} -> {second_heading_en}."
     system_prompt = compose_system_prompt(
-        "You are an English-only academic copy editor. "
-        "Rewrite the markdown into fully fluent English academic prose without changing any fact, number, citation marker, figure path, or structure. "
-        "Do not add new content. "
-        "Do not remove valid citation markers such as [@key]. "
-        "Remove any remaining Chinese text, mojibake fragments, or non-English narrative by translating them into natural English. "
-        "This requirement also applies to figure references, table references, worksheet names, dataset filenames mentioned in prose, captions, and date strings. "
-        "Keep the top-level headings exactly as: "
-        + ", ".join(FIXED_EN_HEADINGS)
-        + ". "
-        "Return markdown only.",
+        "You are a faithful academic translator. "
+        "The Chinese source below is already a finalized, submission-ready manuscript. "
+        "Your ONLY job is to translate it into English. Do not edit, improve, reorganize, or restructure. "
+        "Do not add information, do not omit information, do not summarize, and do not restructure the block. "
+        "Preserve paragraph boundaries exactly — one Chinese paragraph must become exactly one English paragraph. "
+        "Do not merge paragraphs and do not split paragraphs. "
+        "Preserve ALL numbers, statistics, HR values, 95% CI, P values, percentages, and counts exactly as written — do not round, re-express, convert units, or drop any numerical detail. "
+        "Preserve all markdown formatting: bold, italic, inline code, and pipe table syntax must remain intact. "
+        "Preserve figure references like ![alt](path) with their relative paths unchanged. "
+        "You may translate the image alt text, but do not change markdown image syntax or relative paths. "
+        "Do not add citation markers. "
+        "Do not add explanatory text, transition sentences, or interpretive commentary. "
+        "Return only the translated markdown body for this block, without repeating any heading line.",
         profile_name="faithful-academic-translator",
     )
     user_prompt = (
-        "Rewrite the following markdown so that all narrative prose is fully English.\n"
-        "----- BEGIN MARKDOWN -----\n"
-        f"{markdown_text}\n"
-        "----- END MARKDOWN -----\n\n"
-        "Output only the cleaned English markdown."
+        f"{heading_context}\n"
+        "Translate the following markdown block into English.\n"
+        "----- BEGIN MARKDOWN BLOCK -----\n"
+        f"{markdown_block}\n"
+        "----- END MARKDOWN BLOCK -----\n\n"
+        "Output only the translated markdown body."
+    )
+    return system_prompt, user_prompt
+
+
+def build_keyword_translation_prompts(keyword_line: str) -> tuple[str, str]:
+    system_prompt = compose_system_prompt(
+        "You are a faithful academic translator. "
+        "Translate the provided Chinese keyword line into English keywords. "
+        "Keep it concise and output one single line only. "
+        "Preserve the number of keywords whenever possible. "
+        "Separate English keywords with semicolons.",
+        profile_name="faithful-academic-translator",
+    )
+    user_prompt = (
+        "Translate the following Chinese keyword line into English.\n"
+        "Output one single keyword line only.\n"
+        "----- BEGIN KEYWORDS -----\n"
+        f"{keyword_line}\n"
+        "----- END KEYWORDS -----"
+    )
+    return system_prompt, user_prompt
+
+
+def build_table_translation_prompts(table_payload: list[dict[str, object]]) -> tuple[str, str]:
+    """Build prompts for batch-translating markdown pipe tables from Chinese to English.
+
+    The payload is a list of dicts, each with:
+      - index: int (original position for re-insertion)
+      - title: str | None
+      - header: list[str]
+      - rows: list[list[str]]
+    """
+    system_prompt = compose_system_prompt(
+        "You are a faithful academic table translator. "
+        "Translate Chinese table content into English. "
+        "For each table in the input, translate ONLY the table title, column headers, and cell content to English. "
+        "Do NOT change any numbers, percentages, statistical values (HR, P, 95% CI), units, or mathematical symbols. "
+        "Do NOT add, remove, or reorder columns. "
+        "Do NOT add, remove, or reorder rows. "
+        "Do NOT merge or split cells. "
+        "Preserve any markdown table syntax fragments that may appear in cells. "
+        "Preserve any LaTeX math expressions exactly as-is. "
+        "Preserve all special characters like %, <, >, +/-, x, etc. "
+        "Return ONLY valid JSON in the exact same structure: an array of objects, each with `index`, `title`, `header`, and `rows`. "
+        "The `header` and `rows` arrays must have the same same dimensions as the input. "
+        "If a cell is already in English or is a numeric value, keep it unchanged.",
+        profile_name="faithful-academic-translator",
+    )
+    user_prompt = (
+        "Translate all Chinese content in the following tables to English. "
+        "Return JSON only (no markdown fence, no explanation).\n"
+        "----- BEGIN TABLES -----\n"
+        f"{json.dumps(table_payload, ensure_ascii=False, indent=2)}\n"
+        "----- END TABLES -----\n\n"
+        "Output format: [{ \"index\": 0, \"title\": \"Table 1 ...\", \"header\": [\"Variable\", \"HR\", \"P value\"], "
+        "\"rows\": [[\"Age\", \"1.2\", \"0.03\"], ...]}, ...]"
+    )
+    return system_prompt, user_prompt
+
+
+def build_title_generation_prompts(
+    *,
+    topic: str,
+    paper_excerpt: str,
+    report_language: str,
+) -> tuple[str, str]:
+    """Build prompts for generating a paper title from topic and paper content."""
+    lang_name = "Chinese" if report_language == "zh" else "English"
+    system_prompt = compose_system_prompt(
+        f"You are an academic editor who writes concise, precise paper titles. "
+        f"Write a title in {lang_name} only. "
+        f"The title must be NO MORE THAN 10 words. This is a strict limit — count the words and truncate if needed. "
+        f"Prefer specific clinical or methodological terminology over vague words. "
+        f"Prefer concise words. Avoid unnecessarily long words when a shorter equivalent exists "
+        f"(e.g., 'use' not 'utilization', 'show' not 'demonstrate'). "
+        f"Prefer established domain abbreviations (TACE, HCC, OS, RFS) over their full forms. "
+        f"Do not use quotation marks, colons, or subtitles unless the content truly demands them. "
+        f"Return ONLY the title text, nothing else — no markdown, no quotes, no explanation.",
+        profile_name="academic-writing-refiner",
+    )
+    user_prompt = (
+        f"Topic: {topic}\n\n"
+        f"Paper content excerpt:\n"
+        f"----- BEGIN EXCERPT -----\n"
+        f"{paper_excerpt}\n"
+        f"----- END EXCERPT -----\n\n"
+        f"Generate a concise academic paper title in {lang_name} (≤10 words). "
+        f"Use concise words and established abbreviations where appropriate."
+    )
+    return system_prompt, user_prompt
+
+
+def build_title_translation_prompts(
+    *,
+    original_title: str,
+    report_language: str,
+) -> tuple[str, str]:
+    """Build prompts for faithfully translating a paper title."""
+    lang_name = "Chinese" if report_language == "zh" else "English"
+    system_prompt = compose_system_prompt(
+        f"You are a faithful academic translator. "
+        f"Translate the provided paper title into {lang_name}. "
+        f"Be loyal to the source: do not add, omit, or reinterpret any information. "
+        f"The translated title must be NO MORE THAN 10 words. This is a strict limit. "
+        f"Prefer concise words. Avoid unnecessarily long words when a shorter equivalent exists "
+        f"(e.g., 'use' not 'utilization', 'show' not 'demonstrate'). "
+        f"Prefer established domain abbreviations (TACE, HCC, OS, RFS) over their full forms. "
+        f"Return ONLY the translated title text, nothing else — no markdown, no quotes, no explanation.",
+        profile_name="faithful-academic-translator",
+    )
+    user_prompt = (
+        f"Translate the following paper title into {lang_name} (≤10 words). "
+        f"Use concise words and established abbreviations where appropriate:\n"
+        f"----- BEGIN TITLE -----\n"
+        f"{original_title}\n"
+        f"----- END TITLE -----"
     )
     return system_prompt, user_prompt

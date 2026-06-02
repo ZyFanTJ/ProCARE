@@ -1,4 +1,4 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 
 export type CarouselSlide = { title?: string; desc?: string; image?: string; link?: string }
 
@@ -42,16 +42,18 @@ export type SystemSettings = {
 
 const LS_KEY = 'system_settings'
 const API_BASE = '/api/settings'
+const REQUEST_TIMEOUT_MS = 15000
+const SENSITIVE_API_KEY_PROVIDERS = ['openai', 'anthropic', 'google', 'deepseek', 'qwen', 'minimax'] as const
 
 export const DEFAULT_SETTINGS: SystemSettings = {
   systemName: 'RWS研究系统',
   logoDataUrl: '/logo.png',
   faviconDataUrl: '/favicon.ico',
-  footerText: 'TJ & Hengfang © 2026 AI4RWS System',
+  footerText: '2026 AI4RWS System',
   carouselSlides: [
-      { title: 'AI4Research', desc: '智能研究助手，让数据分析更高效', image: '/bg.png', link: '/dashboard' },
-      { title: 'AI4Research', desc: '立刻开始新的RWS研究项目', image: '/bg2.png', link: '/' },
-      { title: 'RWS专业报告精修', desc: '一键组合章节，快速输出Markdown/PDF', image: '/bg_report.png', link: '/reports' },
+      { title: 'AI4Research', desc: '智能研究助手，让数据分析更高效。', image: '/bg.png', link: '/dashboard' },
+      { title: 'AI4Research', desc: '立即开始新的 RWS 研究项目。', image: '/bg2.png', link: '/' },
+      { title: 'RWS 专业报告精修', desc: '一键组合报告章节，快速导出 Markdown/PDF。', image: '/bg_report.png', link: '/reports' },
   ],
   model_costs: {
       "default": { "input_price": 5, "output_price": 20 }
@@ -82,8 +84,9 @@ export function loadSettings(): SystemSettings {
 }
 
 export function saveSettingsLocal(s: SystemSettings) {
-  localStorage.setItem(LS_KEY, JSON.stringify(s))
-  const ev = new CustomEvent('system-settings-updated', { detail: s })
+  const sanitized = sanitizeSettingsForLocalStorage(s)
+  localStorage.setItem(LS_KEY, JSON.stringify(sanitized))
+  const ev = new CustomEvent('system-settings-updated', { detail: sanitized })
   window.dispatchEvent(ev)
 }
 
@@ -94,12 +97,9 @@ export function saveSettings(s: SystemSettings) {
 
 export async function fetchSettingsFromBackend(): Promise<SystemSettings | null> {
   try {
-    const res = await axios.get(API_BASE)
+    const res = await axios.get(API_BASE, { timeout: REQUEST_TIMEOUT_MS })
     if (res.data) {
-      // Merge with defaults to ensure structure
-      const merged = { ...DEFAULT_SETTINGS, ...res.data }
-      saveSettingsLocal(merged) 
-      return merged
+      return { ...DEFAULT_SETTINGS, ...res.data }
     }
   } catch (e) {
     console.error("Failed to fetch settings from backend", e)
@@ -109,8 +109,10 @@ export async function fetchSettingsFromBackend(): Promise<SystemSettings | null>
 
 export async function saveSettingsToBackend(s: SystemSettings): Promise<boolean> {
   try {
-    await axios.post(API_BASE, s)
-    saveSettingsLocal(s)
+    const remote = await fetchBackendSettingsRaw()
+    const payload = mergeSettingsForBackendSave(s, remote)
+    await axios.post(API_BASE, payload, { timeout: REQUEST_TIMEOUT_MS })
+    saveSettingsLocal(payload)
     return true
   } catch (e) {
     console.error("Failed to save settings to backend", e)
@@ -120,7 +122,7 @@ export async function saveSettingsToBackend(s: SystemSettings): Promise<boolean>
 
 export async function resetSettingsToDefault(): Promise<SystemSettings | null> {
   try {
-    const res = await axios.post(`${API_BASE}/reset`)
+    const res = await axios.post(`${API_BASE}/reset`, undefined, { timeout: REQUEST_TIMEOUT_MS })
     if (res.data && res.data.settings) {
       const defaults = { ...DEFAULT_SETTINGS, ...res.data.settings }
       saveSettingsLocal(defaults)
@@ -150,6 +152,54 @@ export function applySettings(s: SystemSettings) {
   }
 }
 
+function sanitizeSettingsForLocalStorage(s: SystemSettings): SystemSettings {
+  const next: SystemSettings = { ...s }
+  if (next.api_keys) {
+    next.api_keys = {}
+    for (const provider of SENSITIVE_API_KEY_PROVIDERS) {
+      const value = s.api_keys?.[provider]
+      if (value && String(value).trim()) {
+        next.api_keys[provider] = ''
+      }
+    }
+  }
+  return next
+}
+
+async function fetchBackendSettingsRaw(): Promise<SystemSettings | null> {
+  try {
+    const res = await axios.get(API_BASE, { timeout: REQUEST_TIMEOUT_MS })
+    if (res.data && typeof res.data === 'object') {
+      return { ...DEFAULT_SETTINGS, ...res.data }
+    }
+  } catch (e) {
+    console.warn('Failed to fetch current backend settings before save', e)
+  }
+  return null
+}
+
+function mergeSettingsForBackendSave(
+  next: SystemSettings,
+  current: SystemSettings | null,
+): SystemSettings {
+  const mergedApiKeys: NonNullable<SystemSettings['api_keys']> = {
+    ...(current?.api_keys || {}),
+  }
+
+  for (const provider of SENSITIVE_API_KEY_PROVIDERS) {
+    const value = next.api_keys?.[provider]
+    if (typeof value === 'string' && value.trim()) {
+      mergedApiKeys[provider] = value.trim()
+    }
+  }
+
+  return {
+    ...(current || {}),
+    ...next,
+    api_keys: mergedApiKeys,
+  }
+}
+
 export function onSettingsChange(handler: (s: SystemSettings) => void) {
   const fn = (e: Event) => {
     const ce = e as CustomEvent<SystemSettings>
@@ -158,3 +208,4 @@ export function onSettingsChange(handler: (s: SystemSettings) => void) {
   window.addEventListener('system-settings-updated', fn as EventListener)
   return () => window.removeEventListener('system-settings-updated', fn as EventListener)
 }
+

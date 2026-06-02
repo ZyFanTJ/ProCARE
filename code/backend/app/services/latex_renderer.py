@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -12,8 +13,8 @@ HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.*)$")
 ORDERED_LIST_PATTERN = re.compile(r"^\d+\.\s+(.*)$")
 IMAGE_PATTERN = re.compile(r"!\[(?P<alt>.*?)\]\((?P<path>.*?)\)")
 MARKDOWN_CITATION_PATTERN = re.compile(r"\[(?P<body>\s*@[^]]+)\]")
-TABLE_SEPARATOR_CELL_PATTERN = re.compile(r"^:?-{3,}:?$")
-TABLE_SEPARATOR_ROW_PATTERN = re.compile(r"^\|?\s*:?-{3,}:?(?:\s*\|\s*:?-{3,}:?)+\s*\|?$")
+TABLE_SEPARATOR_CELL_PATTERN = re.compile(r"^:?[-–—]{3,}:?$")
+TABLE_SEPARATOR_ROW_PATTERN = re.compile(r"^\|?\s*:?[-–—]{3,}:?(?:\s*\|\s*:?[-–—]{3,}:?)+\s*\|?$")
 SPECIAL_CHARS = {
     "\\": r"\textbackslash{}",
     "&": r"\&",
@@ -28,6 +29,7 @@ SPECIAL_CHARS = {
 }
 TEMPLATE_CANDIDATES = ("main.tex", "template.tex", "paper.tex", "manuscript.tex")
 LATEX_ENGINES = ("xelatex", "lualatex", "pdflatex")
+LATEX_ROOT_ENV_VARS = ("PROCARE_LATEX_ROOT", "LATEX_ROOT", "MIKTEX_ROOT", "TEXLIVE_ROOT")
 ABSTRACT_TITLES = {"abstract", "摘要"}
 ABSTRACT_TITLES = {"abstract", "摘要"}
 ABSTRACT_TITLES = {"abstract", "\u6458\u8981"}
@@ -40,8 +42,6 @@ WINDOWS_TEXLIVE_ROOTS = (
 WINDOWS_MIKTEX_ROOTS = (
     Path(r"C:\Program Files\MiKTeX"),
     Path(r"C:\Program Files (x86)\MiKTeX"),
-    Path(r"C:\Users\ryw\AppData\Local\Programs\MiKTeX"),
-    Path(r"F:\academic-writer\latex\miktex"),
 )
 
 
@@ -594,8 +594,16 @@ def _default_document(
     include_bibliography: bool,
     bibliography_block: str | None,
 ) -> str:
+    report_name = _normalize_report_name_for_latex(report_name, report_language)
     if report_language == "zh":
         return _default_chinese_medical_document(
+            report_name=report_name,
+            latex_body=latex_body,
+            include_bibliography=include_bibliography,
+            bibliography_block=bibliography_block,
+        )
+    if report_language == "en":
+        return _default_english_medical_document(
             report_name=report_name,
             latex_body=latex_body,
             include_bibliography=include_bibliography,
@@ -610,18 +618,16 @@ def _default_document(
                 r"\bibliographystyle{plainnat}" "\n"
                 r"\bibliography{references}" "\n"
             )
-    abstract_name = r"\renewcommand{\abstractname}{摘要}" "\n" if report_language == "zh" else ""
-    document_class = r"\documentclass[12pt]{ctexart}" if report_language == "zh" else r"\documentclass[12pt]{article}"
-    cleveref_setup = _chinese_cleveref_setup() if report_language == "zh" else ""
+    document_class = r"\documentclass[12pt]{article}"
     return (
         document_class + "\n"
         r"\usepackage[margin=1in]{geometry}" "\n"
         r"\usepackage{graphicx}" "\n"
+        r"\usepackage{booktabs}" "\n"
         r"\usepackage{indentfirst}" "\n"
         r"\usepackage{hyperref}" "\n"
         r"\hypersetup{hidelinks}" "\n"
         r"\usepackage{cleveref}" "\n"
-        f"{cleveref_setup}"
         r"\usepackage{float}" "\n"
         r"\usepackage{enumitem}" "\n"
         r"\setlist{itemsep=0.35em,topsep=0.2em,parsep=0pt,partopsep=0pt,leftmargin=*}" "\n"
@@ -651,7 +657,6 @@ def _default_document(
         r"\title{" + _escape_latex(report_name) + "}\n"
         r"\date{" + _escape_latex(generated_at) + "}\n"
         "\n"
-        f"{abstract_name}"
         r"\begin{document}" "\n"
         r"\maketitle" "\n"
         "\n"
@@ -659,6 +664,30 @@ def _default_document(
         f"{rendered_bibliography_block}"
         r"\end{document}" "\n"
     )
+
+
+def _normalize_report_name_for_latex(report_name: str, report_language: str | None) -> str:
+    cleaned = str(report_name or "").strip()
+    if report_language == "en":
+        if not cleaned or _looks_like_mojibake_or_cjk_title(cleaned):
+            return "Research Report"
+        return cleaned
+    return cleaned or "研究报告"
+
+
+def _looks_like_mojibake_or_cjk_title(text: str) -> bool:
+    cjk_count = sum(1 for ch in text if "\u4e00" <= ch <= "\u9fff")
+    suspicious_count = sum(1 for ch in text if ch in "锛銆鍩楂鎮鑰鏈鍚澶鍙椋闄")
+    non_ascii_count = sum(1 for ch in text if ord(ch) > 127)
+    question_mark_count = text.count("?")
+    total = max(len(text), 1)
+    if cjk_count / total >= 0.2:
+        return True
+    if suspicious_count / total >= 0.08:
+        return True
+    if question_mark_count / total >= 0.1:
+        return True
+    return non_ascii_count / total >= 0.35
 
 
 def _default_chinese_medical_document(
@@ -752,6 +781,111 @@ def _default_chinese_medical_document(
         r"\end{center}" "\n"
         r"\vspace{0.2em}" "\n\n"
         + abstract_block
+        + body_block
+        + rendered_bibliography_block
+        + r"\end{document}" "\n"
+    )
+
+
+def _default_english_medical_document(
+    *,
+    report_name: str,
+    latex_body: str,
+    include_bibliography: bool,
+    bibliography_block: str | None,
+) -> str:
+    rendered_bibliography_block = bibliography_block or ""
+    if include_bibliography and not rendered_bibliography_block:
+        rendered_bibliography_block = (
+            "\n"
+            r"\bibliographystyle{plainnat}" "\n"
+            r"\bibliography{references}" "\n"
+        )
+
+    abstract_text, body_after_abstract = _extract_abstract_section(latex_body)
+    abstract_block = ""
+    if abstract_text:
+        abstract_block = (
+            r"\begin{center}" "\n"
+            r"{\bfseries\large Abstract\par}" "\n"
+            r"\end{center}" "\n"
+            r"\noindent "
+            + abstract_text.strip()
+            + "\n\n"
+        )
+
+    keyword_text, body_after_keywords = _extract_keyword_section(body_after_abstract)
+    keyword_block = ""
+    if keyword_text:
+        keyword_block = (
+            r"\noindent{\bfseries Keywords:} "
+            + keyword_text.strip()
+            + "\n\n"
+        )
+
+    body_block = body_after_keywords.strip()
+    if body_block:
+        body_block += "\n"
+
+    return (
+        r"\documentclass[12pt]{article}" "\n"
+        r"\usepackage[left=2.28cm,right=2.28cm,top=1.85cm,bottom=2.1cm]{geometry}" "\n"
+        r"\usepackage{graphicx}" "\n"
+        r"\usepackage{booktabs}" "\n"
+        r"\usepackage{indentfirst}" "\n"
+        r"\usepackage{hyperref}" "\n"
+        r"\hypersetup{hidelinks}" "\n"
+        r"\usepackage{cleveref}" "\n"
+        r"\usepackage{float}" "\n"
+        r"\usepackage{enumitem}" "\n"
+        r"\usepackage{titlesec}" "\n"
+        r"\usepackage{fancyhdr}" "\n"
+        r"\usepackage{xcolor}" "\n"
+        r"\usepackage[font=small,labelfont=normalfont]{caption}" "\n"
+        r"\usepackage{natbib}" "\n"
+        r"\setcitestyle{numbers,square}" "\n"
+        r"\definecolor{journalred}{RGB}{157,59,54}" "\n"
+        r"\setlist{itemsep=0.16em,topsep=0.1em,parsep=0pt,partopsep=0pt,leftmargin=*}" "\n"
+        r"\setlength{\parindent}{2em}" "\n"
+        r"\setlength{\parskip}{0pt}" "\n"
+        r"\linespread{1.12}" "\n"
+        r"\captionsetup{skip=2pt}" "\n"
+        r"\setlength{\belowcaptionskip}{0pt}" "\n"
+        r"\titleformat{\section}{\color{journalred}\bfseries\Large}{\thesection.}{0.38em}{}" "\n"
+        r"\titleformat{\subsection}{\color{journalred}\bfseries\large}{\thesubsection.}{0.38em}{}" "\n"
+        r"\titleformat{\subsubsection}{\bfseries\normalsize}{\thesubsubsection.}{0.35em}{}" "\n"
+        r"\titlespacing*{\section}{0pt}{0.95ex plus 0.2ex minus 0.15ex}{0.38ex}" "\n"
+        r"\titlespacing*{\subsection}{0pt}{0.72ex plus 0.18ex minus 0.12ex}{0.26ex}" "\n"
+        r"\titlespacing*{\subsubsection}{0pt}{0.55ex plus 0.15ex minus 0.1ex}{0.18ex}" "\n"
+        r"\pagestyle{fancy}" "\n"
+        r"\fancyhf{}" "\n"
+        rf"\fancyhead[C]{{\small {_escape_latex(report_name)}}}" "\n"
+        r"\fancyfoot[C]{\thepage}" "\n"
+        r"\renewcommand{\headrulewidth}{0.4pt}" "\n"
+        r"\renewcommand{\footrulewidth}{0pt}" "\n"
+        r"\setlength{\headheight}{14pt}" "\n"
+        r"\setlength{\textfloatsep}{5pt plus 1pt minus 1pt}" "\n"
+        r"\setlength{\floatsep}{5pt plus 1pt minus 1pt}" "\n"
+        r"\setlength{\intextsep}{5pt plus 1pt minus 1pt}" "\n"
+        r"\renewcommand{\topfraction}{0.92}" "\n"
+        r"\renewcommand{\bottomfraction}{0.82}" "\n"
+        r"\renewcommand{\textfraction}{0.05}" "\n"
+        r"\renewcommand{\floatpagefraction}{0.82}" "\n"
+        r"\setcounter{topnumber}{3}" "\n"
+        r"\setcounter{bottomnumber}{2}" "\n"
+        r"\setcounter{totalnumber}{5}" "\n"
+        r"\setcounter{secnumdepth}{3}" "\n"
+        "\n"
+        r"\begin{document}" "\n"
+        r"\thispagestyle{fancy}" "\n"
+        r"\begin{center}" "\n"
+        + "{\\bfseries\\fontsize{18pt}{22pt}\\selectfont "
+        + _escape_latex(report_name)
+        + r"\par}" "\n"
+        r"\end{center}" "\n"
+        r"\vspace{0.2em}" "\n\n"
+        + abstract_block
+        + keyword_block
         + body_block
         + rendered_bibliography_block
         + r"\end{document}" "\n"
@@ -947,6 +1081,23 @@ def _extract_abstract_section(latex_body: str) -> tuple[str | None, str]:
         abstract_text = match.group("body").strip()
         remaining = (latex_body[: match.start()] + latex_body[match.end() :]).strip()
         return abstract_text, remaining
+    return None, latex_body
+
+
+def _extract_keyword_section(latex_body: str) -> tuple[str | None, str]:
+    """Extract a Keywords section from LaTeX body, returning (keyword_text, remaining_body)."""
+    pattern = re.compile(
+        r"^\s*(?P<cmd>\\(?:section|chapter)\*?\{(?P<title>[^}]*)\})\s*(?P<body>.*?)(?=^\s*\\(?:section|chapter)\*?\{|^\s*\\end\{document\}|\Z)",
+        flags=re.DOTALL | re.MULTILINE,
+    )
+    for match in pattern.finditer(latex_body):
+        title = match.group("title").strip().lower()
+        if title not in KEYWORD_TITLES:
+            continue
+
+        keyword_text = match.group("body").strip()
+        remaining = (latex_body[: match.start()] + latex_body[match.end() :]).strip()
+        return keyword_text, remaining
     return None, latex_body
 
 
@@ -1228,34 +1379,103 @@ def _append_compiler_profile(
 def _iter_common_windows_engine_paths() -> list[tuple[str, Path]]:
     results: list[tuple[str, Path]] = []
 
+    for root in _iter_configured_latex_roots():
+        results.extend(_iter_latex_engine_paths_under_root(root))
+
     for root in WINDOWS_TEXLIVE_ROOTS:
-        if not root.exists():
-            continue
-        version_dirs = [path for path in root.iterdir() if path.is_dir() and path.name.isdigit()]
-        for version_dir in sorted(version_dirs, reverse=True):
-            bin_dir = version_dir / "bin" / "windows"
-            for engine_name in LATEX_ENGINES:
-                engine_path = bin_dir / f"{engine_name}.exe"
-                if engine_path.exists():
-                    results.append((engine_name, engine_path))
+        results.extend(_iter_texlive_engine_paths(root))
 
-    for root in WINDOWS_MIKTEX_ROOTS:
-        if not root.exists():
+    for root in (*WINDOWS_MIKTEX_ROOTS, *_iter_user_miktex_roots()):
+        results.extend(_iter_miktex_engine_paths(root))
+
+    return results
+
+
+def _iter_configured_latex_roots() -> list[Path]:
+    roots: list[Path] = []
+    seen: set[str] = set()
+    for env_var in LATEX_ROOT_ENV_VARS:
+        raw_value = os.environ.get(env_var)
+        if not raw_value:
             continue
-        for relative in (
-            Path("miktex/bin/x64"),
-            Path("bin/x64"),
-            Path("miktex/bin"),
-            Path("bin"),
-        ):
-            bin_dir = root / relative
-            if not bin_dir.exists():
+        for part in raw_value.split(os.pathsep):
+            candidate = part.strip()
+            if not candidate:
                 continue
-            for engine_name in LATEX_ENGINES:
-                engine_path = bin_dir / f"{engine_name}.exe"
-                if engine_path.exists():
-                    results.append((engine_name, engine_path))
+            root = Path(candidate).expanduser()
+            key = str(root).lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            roots.append(root)
+    return roots
 
+
+def _iter_user_miktex_roots() -> list[Path]:
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if not local_app_data:
+        return []
+    return [Path(local_app_data) / "Programs" / "MiKTeX"]
+
+
+def _iter_latex_engine_paths_under_root(root: Path) -> list[tuple[str, Path]]:
+    results: list[tuple[str, Path]] = []
+    if not root.exists():
+        return results
+
+    for bin_dir in (
+        root,
+        root / "bin" / "windows",
+        root / "bin" / "x64",
+        root / "miktex" / "bin" / "x64",
+        root / "miktex" / "bin",
+        root / "bin",
+    ):
+        results.extend(_iter_engine_paths_in_bin_dir(bin_dir))
+
+    results.extend(_iter_texlive_engine_paths(root))
+    results.extend(_iter_miktex_engine_paths(root))
+    return results
+
+
+def _iter_texlive_engine_paths(root: Path) -> list[tuple[str, Path]]:
+    results: list[tuple[str, Path]] = []
+    if not root.exists():
+        return results
+
+    version_dirs = [path for path in root.iterdir() if path.is_dir() and path.name.isdigit()]
+    if root.name.isdigit():
+        version_dirs.append(root)
+
+    for version_dir in sorted(version_dirs, reverse=True):
+        results.extend(_iter_engine_paths_in_bin_dir(version_dir / "bin" / "windows"))
+    return results
+
+
+def _iter_miktex_engine_paths(root: Path) -> list[tuple[str, Path]]:
+    results: list[tuple[str, Path]] = []
+    if not root.exists():
+        return results
+
+    for relative in (
+        Path("miktex/bin/x64"),
+        Path("bin/x64"),
+        Path("miktex/bin"),
+        Path("bin"),
+    ):
+        results.extend(_iter_engine_paths_in_bin_dir(root / relative))
+    return results
+
+
+def _iter_engine_paths_in_bin_dir(bin_dir: Path) -> list[tuple[str, Path]]:
+    if not bin_dir.exists():
+        return []
+
+    results: list[tuple[str, Path]] = []
+    for engine_name in LATEX_ENGINES:
+        engine_path = bin_dir / f"{engine_name}.exe"
+        if engine_path.exists():
+            results.append((engine_name, engine_path))
     return results
 
 
@@ -2127,6 +2347,8 @@ def _ensure_template_support_packages(template_text: str, *, report_language: st
         additions.append(_chinese_cleveref_setup().rstrip())
     if not _template_declares_package(template_text, "indentfirst"):
         additions.append(r"\usepackage{indentfirst}")
+    if not _template_declares_package(template_text, "booktabs"):
+        additions.append(r"\usepackage{booktabs}")
     if r"\usepackage{float}" not in lowered:
         additions.append(r"\usepackage{float}")
     if r"\usepackage{natbib}" not in lowered:

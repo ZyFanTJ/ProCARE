@@ -219,15 +219,3 @@ For targeted checks, run the specific test files such as `tests/test_opencode_ru
 ## Data and Compliance
 
 This repository is research code. Use only de-identified or otherwise authorized real-world data. A successful run means the generated bundle satisfied the implemented schema, execution, artifact, and report checks; it does not establish clinical correctness, causal validity, or regulatory sufficiency without expert review.
-
-## Citation
-
-If you use this code, please cite the ProCARE paper:
-
-```bibtex
-@misc{procare2026,
-  title  = {ProCARE: Real-World Study Automation via Profile-Grounded Evidence Contracts},
-  author = {Fan, Zhaoyu and Han, Bowen and Ou, Jincheng and Ren, Yanwei and He, Zehua and Huang, Kaiyu and He, Pengcheng and Ni, Shanshan and Gong, Chengchen and Xue, Shuai and Shi, Qingjiang},
-  year   = {2026}
-}
-```

@@ -4,6 +4,7 @@ import type { UploadProps } from 'antd'
 import { InboxOutlined, CodeOutlined, CheckCircleOutlined, CloseCircleOutlined, BulbOutlined, CopyOutlined } from '@ant-design/icons'
 import { uploadExcel, streamPlan, streamRefinePlan, executeJobAsync, updatePlan, fetchStatus, streamExecute, fetchJobPlan, fetchExcelInfo, brainstorm, deleteProfile } from '../api/research'
 import { Link, useSearchParams } from 'react-router-dom'
+import { resolveStaticUrl } from '../api/client'
 import '../assets/logs.css'
 import JsonTree from '../components/JsonTree'
 import CodeViewer from '../components/CodeViewer'
@@ -321,9 +322,6 @@ export default function Wizard() {
     try {
       const ctrl = new AbortController()
       setController(ctrl)
-      
-      const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-      const prefix = baseApi.replace(/\/api$/, '')
       
       await streamExecute(job.id, (event) => {
          if (event.type === 'phase') {
@@ -648,9 +646,7 @@ export default function Wizard() {
             <Card type="inner" title="图表预览（实时）" style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {plots.map((p) => {
-                  const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-                  const prefix = baseApi.replace(/\/api$/, '')
-                  const src = `${prefix}/static/jobs/${job!.id}/plots/${p}`
+                  const src = resolveStaticUrl(`/static/jobs/${job!.id}/plots/${p}`)
                   return (
                     <div key={p} style={{ width: 260 }}>
                       <Image src={src} alt={p} width={240} height={180} style={{ objectFit: 'contain' }} />
@@ -759,9 +755,7 @@ export default function Wizard() {
             <Card type="inner" title="图表预览" style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {plots.map((p) => {
-                  const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-                  const prefix = baseApi.replace(/\/api$/, '')
-                  const src = `${prefix}/static/jobs/${job.id}/plots/${p}`
+                  const src = resolveStaticUrl(`/static/jobs/${job.id}/plots/${p}`)
                   return (
                     <div key={p} style={{ width: 260 }}>
                       <Image src={src} alt={p} width={240} height={180} style={{ objectFit: 'contain' }} />

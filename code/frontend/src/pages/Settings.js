@@ -4,6 +4,7 @@ import { Card, Form, Input, Upload, Button, Space, Typography, message, Image, T
 import { InboxOutlined, SettingOutlined, DollarOutlined, BgColorsOutlined, ApiOutlined } from '@ant-design/icons';
 import { DEFAULT_SETTINGS, loadSettings, saveSettingsToBackend, fetchSettingsFromBackend, resetSettingsToDefault } from '../utils/systemSettings';
 import SkillsSettingsComponent from '../components/SkillsSettings';
+const API_KEY_PROVIDERS = ['openai', 'anthropic', 'google', 'deepseek', 'qwen', 'minimax'];
 function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -12,6 +13,23 @@ function fileToDataUrl(file) {
         reader.readAsDataURL(file);
     });
 }
+function sanitizeSettingsForForm(settings) {
+    const next = {
+        ...settings,
+        api_keys: { ...(settings.api_keys || {}) },
+        model_costs: { ...(settings.model_costs || {}) },
+    };
+    return next;
+}
+function getCurrentThemePreference() {
+    return loadSettings().theme || DEFAULT_SETTINGS.theme || 'dark';
+}
+function withCurrentTheme(settings) {
+    return {
+        ...settings,
+        theme: getCurrentThemePreference(),
+    };
+}
 export default function Settings() {
     const [form] = Form.useForm();
     const [logoPreview, setLogoPreview] = useState();
@@ -19,23 +37,29 @@ export default function Settings() {
     const [carouselJson, setCarouselJson] = useState('');
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
+    const [persistedSettings, setPersistedSettings] = useState(loadSettings());
     useEffect(() => {
         initSettings();
     }, []);
     const initSettings = async () => {
         setLoading(true);
-        // First load from local
-        let s = loadSettings();
-        updateForm(s);
-        // Then try fetch from backend
-        const remote = await fetchSettingsFromBackend();
-        if (remote) {
-            updateForm(remote);
+        try {
+            const s = withCurrentTheme(loadSettings());
+            setPersistedSettings(s);
+            updateForm(s);
+            const remote = await fetchSettingsFromBackend();
+            if (remote) {
+                const synced = withCurrentTheme(remote);
+                setPersistedSettings(synced);
+                updateForm(synced);
+            }
         }
-        setLoading(false);
+        finally {
+            setLoading(false);
+        }
     };
     const updateForm = (s) => {
-        form.setFieldsValue(s);
+        form.setFieldsValue(sanitizeSettingsForForm(s));
         setLogoPreview(s.logoDataUrl);
         setFaviconPreview(s.faviconDataUrl);
         try {
@@ -60,19 +84,38 @@ export default function Settings() {
             message.error('轮播配置不是合法JSON');
             return;
         }
-        // Merge with current settings to prevent losing unmounted fields' values
-        const currentSettings = loadSettings();
+        const existingApiKeys = persistedSettings.api_keys || {};
+        const incomingApiKeys = vals.api_keys || {};
+        const mergedApiKeys = { ...existingApiKeys };
+        for (const provider of API_KEY_PROVIDERS) {
+            const value = incomingApiKeys?.[provider];
+            if (typeof value === 'string' && value.trim()) {
+                mergedApiKeys[provider] = value.trim();
+            }
+        }
+        const themeTouched = form.isFieldTouched(['theme']);
+        const themeToPersist = themeTouched
+            ? (vals.theme || persistedSettings.theme || getCurrentThemePreference())
+            : getCurrentThemePreference();
         const merged = {
-            ...currentSettings,
+            ...persistedSettings,
             ...vals,
+            theme: themeToPersist,
+            api_keys: mergedApiKeys,
             logoDataUrl: logoPreview,
             faviconDataUrl: faviconPreview,
             carouselSlides: slides
         };
         setLoading(true);
-        const success = await saveSettingsToBackend(merged);
-        setLoading(false);
+        let success = false;
+        try {
+            success = await saveSettingsToBackend(merged);
+        }
+        finally {
+            setLoading(false);
+        }
         if (success) {
+            setPersistedSettings(merged);
             message.success('系统设置已保存');
         }
         else {
@@ -105,9 +148,15 @@ export default function Settings() {
     };
     const onReset = async () => {
         setLoading(true);
-        const defaults = await resetSettingsToDefault();
-        setLoading(false);
+        let defaults = null;
+        try {
+            defaults = await resetSettingsToDefault();
+        }
+        finally {
+            setLoading(false);
+        }
         if (defaults) {
+            setPersistedSettings(defaults);
             updateForm(defaults);
             message.success('已恢复默认设置');
         }
@@ -137,7 +186,7 @@ export default function Settings() {
                                     { label: 'Claude Sonnet 4.6', value: 'claude-sonnet-4-6' },
                                     { label: 'Qwen 3.5 Plus', value: 'qwen3.5-plus' },
                                     { label: 'MiniMax M2.5 Highspeed', value: 'minimax-m2.5-highspeed' },
-                                    { label: 'DeepSeek Chat', value: 'deepseek-chat' }
+                                    { label: 'DeepSeek V4 Flash', value: 'deepseek-v4-flash' }
                                 ] }) }), _jsx(Divider, { orientation: "left", children: "API Keys \u914D\u7F6E" }), _jsxs(Row, { gutter: 24, children: [_jsx(Col, { span: 24, children: _jsx(Form.Item, { label: "API Base URL (OpenAI \u517C\u5BB9\u683C\u5F0F)", name: "api_base_url", help: "\u53EF\u9009\u3002\u9ED8\u8BA4\u7559\u7A7A\u5373\u53EF\u3002\u5982\u9700\u4F7F\u7528\u4E2D\u8F6C\u670D\u52A1\u6216\u672C\u5730\u6A21\u578B\uFF0C\u8BF7\u8F93\u5165\u57FA\u7840\u5730\u5740\uFF08\u4F8B\u5982 https://api.openai.com/v1\uFF09", children: _jsx(Input, { placeholder: "https://..." }) }) }), _jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "OpenAI API Key", name: ['api_keys', 'openai'], children: _jsx(Input.Password, { placeholder: "sk-..." }) }) }), _jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "Anthropic API Key", name: ['api_keys', 'anthropic'], children: _jsx(Input.Password, { placeholder: "sk-ant-..." }) }) }), _jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "Google Gemini API Key", name: ['api_keys', 'google'], children: _jsx(Input.Password, { placeholder: "AIza..." }) }) }), _jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "DeepSeek API Key", name: ['api_keys', 'deepseek'], children: _jsx(Input.Password, { placeholder: "sk-..." }) }) }), _jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "Qwen API Key", name: ['api_keys', 'qwen'], children: _jsx(Input.Password, { placeholder: "sk-..." }) }) }), _jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "MiniMax API Key", name: ['api_keys', 'minimax'], children: _jsx(Input.Password, { placeholder: "sk-..." }) }) })] })] }), _jsxs(Card, { type: "inner", title: "\u6A21\u578B\u6210\u672C\u8BBE\u7F6E (\u6BCF1M tokens\u4EF7\u683C)", children: [_jsx(Typography.Paragraph, { type: "secondary", children: "\u914D\u7F6E\u4E0D\u540C\u6A21\u578B\u7684\u8F93\u5165/\u8F93\u51FA\u4EF7\u683C\uFF08\u5355\u4F4D\uFF1A\u7F8E\u5143/$\uFF09\u3002\u7CFB\u7EDF\u5C06\u6839\u636E\u6A21\u578B\u540D\u79F0\u524D\u7F00\u5339\u914D\u89C4\u5219\u8BA1\u7B97\u6210\u672C\u3002" }), modelKeys.map(modelKey => (_jsxs("div", { style: { marginBottom: 24 }, children: [_jsx(Typography.Title, { level: 5, style: { marginTop: 0 }, children: modelKey === 'default' ? '默认回退' : `模型前缀: ${modelKey}` }), _jsxs(Row, { gutter: 16, children: [_jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "\u8F93\u5165\u4EF7\u683C ($/1M)", name: ['model_costs', modelKey, 'input_price'], rules: [{ required: true }], children: _jsx(InputNumber, { step: 0.01, min: 0, style: { width: '100%' }, prefix: "$" }) }) }), _jsx(Col, { span: 12, children: _jsx(Form.Item, { label: "\u8F93\u51FA\u4EF7\u683C ($/1M)", name: ['model_costs', modelKey, 'output_price'], rules: [{ required: true }], children: _jsx(InputNumber, { step: 0.01, min: 0, style: { width: '100%' }, prefix: "$" }) }) })] }), _jsx(Divider, { style: { margin: '12px 0' } })] }, modelKey))), _jsx(Typography.Text, { type: "secondary", children: "\u6CE8\uFF1A\u5982\u9700\u6DFB\u52A0\u66F4\u591A\u6A21\u578B\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458\u6216\u76F4\u63A5\u4FEE\u6539\u914D\u7F6E\u6587\u4EF6\u3002\u6B64\u5904\u4EC5\u652F\u6301\u8C03\u6574\u73B0\u6709\u9884\u8BBE\u6A21\u578B\u7684\u8D39\u7387\u3002" })] })] }));
     };
     const items = [

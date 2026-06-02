@@ -1,7 +1,8 @@
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Table, Tag, Button, message, Empty, Space, Image, Popconfirm, Input, Tooltip } from 'antd'
 import { listJobs, executeJobAsync, deleteJob } from '../api/research'
+import { resolveStaticUrl } from '../api/client'
 import { Link, useSearchParams } from 'react-router-dom'
 import { 
   SearchOutlined, 
@@ -25,11 +26,6 @@ export default function Projects() {
   useEffect(() => {
     setLoading(true)
     listJobs().then((res) => setData(res.jobs || [])).finally(() => setLoading(false))
-  }, [])
-
-  const staticPrefix = useMemo(() => {
-    const baseApi = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-    return baseApi ? baseApi.replace(/\/api$/, '') : ''
   }, [])
 
   const q = (params.get('q') || '').trim().toLowerCase()
@@ -88,7 +84,7 @@ export default function Projects() {
                 // Add timestamp to bypass 304 cache issues (which might cause CORS errors in some environments)
                 // We combine job creation time with a session-level cache buster
                 const timestamp = r.created_ts || 0
-                const src = `${staticPrefix}/static/jobs/${r.job_id}/plots/${fname}?t=${timestamp}&cb=${cacheBuster}`
+                const src = `${resolveStaticUrl(`/static/jobs/${r.job_id}/plots/${fname}`)}?t=${timestamp}&cb=${cacheBuster}`
                 return (
                   <Image
                     key={fname}

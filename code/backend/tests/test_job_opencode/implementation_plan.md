@@ -10,7 +10,7 @@
 4. {'stage': '结果可视化', 'purpose': '形成可供快速审阅和决策的图表输出，支持P0阶段可行性判断与后续方案细化。', 'actions': ['绘制研究对象筛选流程图，展示原始样本、排除原因及最终分析人群。', '绘制术后再治疗方案构成图：条形图/堆叠柱状图展示事件患者中的各治疗占比及联合治疗结构。', '绘制K-M曲线：按主要治疗组分别展示OS和RFS，并标注风险表、log-rank P值和中位生存时间。', '绘制随访时间与治疗起始时间分布图，辅助判断删失与时间偏倚风险。', '可选：森林图展示多变量Cox模型HR；Love plot展示倾向评分调整前后协变量平衡。'], 'deliverables': ['图1：患者筛选流程图', '图2：术后再治疗方案分布图', '图3：不同治疗方案OS的K-M曲线', '图4：不同治疗方案RFS的K-M曲线', '图5：多变量HR森林图（可选）']}
 
 ## Data Context
-Original Data Path: D:\CodeLib\HF_ai4research_v2\backend\output\uploads\1770117283_c805c46a_03-数据集-截至202509.xlsx
+Original Data Path: <PROJECT_OUTPUT>/uploads/example_workbook.xlsx
 Please refer to `excel_info.json` in this directory for detailed schema.
 
 ## Requirements

@@ -1,17 +1,22 @@
 # Stage 1: Install opencode-ai CLI via Node.js (Debian-based to match final image's glibc)
-FROM m.daocloud.io/docker.io/library/node:20-bookworm-slim AS opencode
+FROM node:20-bookworm-slim AS opencode
 
-RUN npm install -g opencode-ai@1.15.11 --registry https://registry.npmmirror.com
+RUN npm install -g opencode-ai@1.15.11
 
 # Stage 2: Python backend with opencode binary from stage 1
-FROM m.daocloud.io/docker.io/library/python:3.11-slim
+FROM python:3.11-slim
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Replace APT source with Tsinghua mirror for faster downloads in China
-RUN sed -i 's|http://deb.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources && \
-    sed -i 's|http://security.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources
+# Configure APT sources with fallback (try official, fallback to Aliyun for China network)
+RUN set -e; \
+    apt-get update || { \
+        echo "Official source failed, trying Aliyun mirror..."; \
+        sed -i 's|http://deb.debian.org|https://mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources; \
+        sed -i 's|http://security.debian.org|https://mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources; \
+        apt-get update; \
+    }
 
 # Install system dependencies (including LaTeX toolchain for paper export)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,7 +37,8 @@ COPY --from=opencode /usr/local/bin/opencode /usr/local/bin/opencode
 COPY requirements.txt /app/
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip install --no-cache-dir -r requirements.txt || \
+    pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 # Copy the current directory contents into the container at /app
 COPY . /app

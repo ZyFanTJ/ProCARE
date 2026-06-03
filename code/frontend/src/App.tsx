@@ -1,5 +1,5 @@
 import { Layout, Menu, Input, Space, Avatar, Button, ConfigProvider, theme, AutoComplete, App as AntdApp } from 'antd'
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Wizard from './pages/Wizard'
 import ReportViewer from './pages/ReportViewer'
@@ -207,7 +207,7 @@ export default function App() {
           <div key={location.pathname} className="route-animate">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/" element={<Wizard />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/wizard" element={<Wizard />} />
             <Route path="/report/:jobId" element={<ReportViewer />} />
             <Route path="/compose/:jobId" element={<ReportComposer />} />

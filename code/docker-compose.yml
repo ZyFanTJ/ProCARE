@@ -16,7 +16,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ""
+        VITE_API_BASE_URL: "/api"
     container_name: procare-frontend
     ports:
       - "5173:80"
@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   banner:
-    image: m.daocloud.io/docker.io/library/alpine:latest
+    image: alpine:latest
     container_name: procare-banner
     depends_on:
       - backend
